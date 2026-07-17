@@ -1,0 +1,56 @@
+{
+  "fire": [
+    {
+      "id": "f_01",
+      "word": "abandon",
+      "meaning": "を捨てる、諦める",
+      "part_of_speech": "動詞",
+      "etymology": "語源: a(〜へ) + bandon(支配・命令) = 支配下に投げ捨てる",
+      "distractors": ["（資源が）豊かな", "（音楽などの）バンド", "を禁止する"]
+    },
+    {
+      "id": "f_02",
+      "word": "acquire",
+      "meaning": "を取得する、身につける",
+      "part_of_speech": "動詞",
+      "etymology": "語源: ac(〜へ) + quire(求める) = 求め続けることで得る",
+      "distractors": ["を必要とする", "を調査する", "をあきらめる"]
+    }
+  ],
+  "water": [
+    {
+      "id": "w_01",
+      "word": "agriculture",
+      "meaning": "農業",
+      "part_of_speech": "名詞",
+      "etymology": "語源: agri(野原) + culture(耕作) = 野原を耕すこと",
+      "distractors": ["建築・土木", "気象学", "文化・芸術"]
+    },
+    {
+      "id": "w_02",
+      "word": "authority",
+      "meaning": "権威、権限",
+      "part_of_speech": "名詞",
+      "etymology": "語源: author(著者・創始者) + ity(性質) = 創始者が持つ絶対的な力",
+      "distractors": ["信頼できる", "著者、作家", "誠実さ"]
+    }
+  ],
+  "wood": [
+    {
+      "id": "g_01",
+      "word": "accurate",
+      "meaning": "正確な、精密な",
+      "part_of_speech": "形容詞",
+      "etymology": "語源: ac(〜へ) + cure(手入れ・注意) = 注意深く手入れされた",
+      "distractors": ["鋭い、深刻な", "を蓄積する", "曖昧な"]
+    },
+    {
+      "id": "g_02",
+      "word": "beneficial",
+      "meaning": "有益な、ためになる",
+      "part_of_speech": "形容詞",
+      "etymology": "語源: bene(良い) + fic(作る) = 良い状態を生み出す",
+      "distractors": ["利益、恩恵", "人工的な", "一時的な"]
+    }
+  ]
+}
