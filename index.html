@@ -2,14 +2,14 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>英単語クイズRPG 〜システム英単語準拠〜</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
     <div id="game-window">
-        <!-- 共通上部ステータスヘッダー -->
+        <!-- 1画面完結：ヘッダー（固定） -->
         <header id="game-header">
             <div class="player-profile">
                 <span class="rank-badge">Lv.<span id="player-rank">1</span></span>
@@ -25,9 +25,9 @@
             </div>
         </header>
 
-        <!-- メイン表示領域（タブ切り替え） -->
+        <!-- 1画面完結：伸縮するメインコンテンツ領域 -->
         <main id="game-main">
-            <!-- 1. ダンジョン（ホーム）タブ -->
+            <!-- ダンジョン（ホーム）タブ -->
             <div id="tab-dungeon" class="tab-screen">
                 <div class="banner-area">
                     <h2>Chapter 1：基礎の森</h2>
@@ -40,7 +40,7 @@
                 </div>
             </div>
 
-            <!-- 2. 図鑑（単語帳）タブ -->
+            <!-- 図鑑（単語帳）タブ -->
             <div id="tab-dictionary" class="tab-screen" style="display: none;">
                 <div class="dict-control">
                     <h3>キャラクター図鑑 (単語帳)</h3>
@@ -50,30 +50,29 @@
                         <button class="sub-tab-btn" data-tab="favorite">お気に入り</button>
                     </div>
                 </div>
-                <div id="dict-list" class="dict-grid">
-                    <!-- 動的に単語キャラが生成されます -->
-                </div>
+                <!-- 枠内独立スクロール領域 -->
+                <div id="dict-list" class="dict-grid"></div>
             </div>
 
-            <!-- 3. 単語ガチャタブ -->
+            <!-- 単語ガチャタブ -->
             <div id="tab-gacha" class="tab-screen" style="display: none;">
                 <div class="gacha-container">
                     <div class="gacha-dragon">🐲</div>
                     <h3>英単語召喚ガチャ</h3>
-                    <p class="gacha-desc">1回召喚：15 EP (所持EPに応じて引けます)</p>
+                    <p class="gacha-desc">1回召喚：15 EP</p>
                     <button id="btn-gacha-pull" class="stone-btn btn-gacha">召喚（ガチャを引く）</button>
                     <div id="gacha-result" class="gacha-result-box" style="display: none;"></div>
                 </div>
             </div>
 
-            <!-- 4. その他タブ -->
+            <!-- その他タブ -->
             <div id="tab-others" class="tab-screen" style="display: none;">
                 <div class="others-container">
                     <h3>その他メニュー</h3>
                     <div class="stone-menu">
                         <button id="btn-reset-data" class="stone-btn btn-danger">セーブデータをリセット</button>
                         <div class="credits">
-                            <p>英単語クイズRPG v2.1</p>
+                            <p>英単語クイズRPG v2.2</p>
                             <p>GitHub共同開発用設計モデル</p>
                         </div>
                     </div>
@@ -81,17 +80,18 @@
             </div>
         </main>
 
-        <!-- 5. エネミー・スキャン画面 (バトル突入用) -->
+        <!-- 5. エネミー・スキャン画面 (バトル突入オーバーレイ) -->
         <div id="screen-scan" class="overlay-screen" style="display: none;">
             <div class="header-banner">⚠️ ENEMY DETECTED ⚠️</div>
             <p class="section-desc">このバトルの敵の弱点（出題される英単語）を検知しました。頭に叩き込んでください！</p>
+            <!-- 枠内独立スクロール領域 -->
             <div id="scan-list"></div>
             <button id="btn-start-battle" class="primary-btn-pazd">解析完了！バトル開始</button>
         </div>
 
-        <!-- 6. バトル画面 -->
+        <!-- 6. バトル画面 (オーバーレイ) -->
         <div id="screen-battle" class="overlay-screen" style="display: none;">
-            <div id="flash-effect-panel" class="flash-overlay"></div> <!-- 演出用フラッシュパネル -->
+            <div id="flash-effect-panel" class="flash-overlay"></div>
             <div class="stage-header">
                 <span id="stage-name">Section 1 (WAVE 1/3)</span>
                 <span id="combo-display">0 COMBO</span>
@@ -105,7 +105,6 @@
                 <div class="hp-bar-container enemy-hp-container">
                     <div id="enemy-hp" class="hp-bar enemy-hp-fill" style="width: 100%;"></div>
                 </div>
-                <!-- 修正箇所：敵のHPを数値化 -->
                 <div class="enemy-hp-text">HP: <span id="enemy-hp-text-num">100</span> / <span id="enemy-hp-max-num">100</span></div>
             </div>
 
@@ -160,7 +159,7 @@
             <button id="btn-result-to-home" class="primary-btn-pazd">ホームに戻る</button>
         </div>
 
-        <!-- 共通下部タブナビゲーション -->
+        <!-- 下部タブナビゲーション（固定） -->
         <footer id="game-footer">
             <button class="footer-tab active" data-target="tab-dungeon">
                 <span class="tab-icon">🏰</span>
