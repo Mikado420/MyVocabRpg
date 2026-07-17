@@ -1,15 +1,13 @@
 window.GameStateManager = {
-    // マスター（デフォルト）データ
     wordDatabase: [],
     
-    // ユーザーセーブデータ構造（デフォルト）
     saveData: {
         rank: 1,
         ep: 100,
+        gold: 500,
         words: {} 
     },
 
-    // ローカルデータのフォールバック（CORS制限、またはJSON破損時の安全装置）
     fallbackData: {
         "chapter_1": {
             "section_1": [
@@ -98,7 +96,6 @@ window.GameStateManager = {
             if (!response.ok) throw new Error("Fetch failed");
             const data = await response.json();
             
-            // 厳格なJSON構造チェック
             if (data && data.chapter_1 && data.chapter_1.section_1) {
                 this.wordDatabase = data.chapter_1.section_1;
             } else {
@@ -118,21 +115,22 @@ window.GameStateManager = {
                 this.saveData = JSON.parse(stored);
             } catch (e) {
                 console.error("セーブデータの破損を検知。データを初期化します:", e);
-                this.saveData = { rank: 1, ep: 100, words: {} };
+                this.saveData = { rank: 1, ep: 100, gold: 500, words: {} };
             }
         }
         
         // セーブデータの健全性保証（古いフォーマットからのマイグレーション）
         if (!this.saveData || typeof this.saveData !== 'object') {
-            this.saveData = { rank: 1, ep: 100, words: {} };
+            this.saveData = { rank: 1, ep: 100, gold: 500, words: {} };
         }
         if (!this.saveData.words || typeof this.saveData.words !== 'object') {
             this.saveData.words = {};
         }
         if (typeof this.saveData.rank !== 'number') this.saveData.rank = 1;
         if (typeof this.saveData.ep !== 'number') this.saveData.ep = 100;
+        if (typeof this.saveData.gold !== 'number') this.saveData.gold = 500;
         
-        // データベースの全単語に対する未踏ステートの補完
+        // 未踏ステート補完
         if (this.wordDatabase && Array.isArray(this.wordDatabase)) {
             this.wordDatabase.forEach(word => {
                 if (!this.saveData.words[word.id]) {
@@ -165,9 +163,12 @@ window.GameStateManager = {
 
         if (isCorrect) {
             record.correct_count++;
+            // 累計3回正解で完全解放（マスター）
             if (record.status !== 'mastered' && record.correct_count >= 3) {
                 record.status = 'mastered';
-                alert(`🎉 単語「${this.getWordName(id)}」をマスターしました！仲間として編成に組み込めます！`);
+                setTimeout(() => {
+                    alert(`🎉 【マスター】単語「${this.getWordName(id)}」を習得！仲間（キャラクター）として完全解放されました！`);
+                }, 400);
             }
         } else {
             record.incorrect_count++;
@@ -185,5 +186,18 @@ window.GameStateManager = {
             this.saveData.words[id].is_favorite = !this.saveData.words[id].is_favorite;
             this.save();
         }
+    },
+
+    // マスター（カラー解放）した単語数から学習EXP率を算出する
+    calculateExpProgress() {
+        if (!this.wordDatabase || this.wordDatabase.length === 0) return 0;
+        let masteredCount = 0;
+        this.wordDatabase.forEach(word => {
+            const state = this.saveData.words[word.id];
+            if (state && state.status === 'mastered') {
+                masteredCount++;
+            }
+        });
+        return Math.floor((masteredCount / this.wordDatabase.length) * 100);
     }
 };
