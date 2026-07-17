@@ -1,53 +1,31 @@
-class GameManager {
-    constructor() {
-        // ゲームデータ
-        this.wordsData = null;
-        this.currentWave = 0;
-        this.maxWave = 3;
-        this.combo = 0;
-        this.ep = 100;
-        
-        // バトル内ステータス
-        this.enemyHp = 100;
-        this.enemyMaxHp = 100;
-        this.enemyTurn = 3;
-        this.enemyMaxTurn = 3;
-        
-        this.playerHp = 100;
-        this.playerMaxHp = 100;
+window.GameController = {
+    currentWave: 0,
+    maxWave: 3,
+    combo: 0,
 
-        // WAVE毎の敵設定
-        this.enemySettings = [
-            { name: "レッドスライム (火)", emoji: "👿", hp: 60, turn: 3, reward: "火のタマゴ" },
-            { name: "アクアナイト (水)", emoji: "🛡️", hp: 100, turn: 2, reward: "水のタマゴ" },
-            { name: "古代木霊獣 (BOSS)", emoji: "🦁", hp: 200, turn: 3, reward: "ゴールドレアタマゴ" }
-        ];
+    enemyHp: 100,
+    enemyMaxHp: 100,
+    enemyTurn: 3,
+    enemyMaxTurn: 3,
 
-        // クイズ一時記憶用
-        this.currentQuizWord = null;
-        this.quizTimer = null;
-        this.quizTimeLeft = 7;
+    playerHp: 100,
+    playerMaxHp: 100,
 
-        this.init();
-    }
+    enemyConfigs: [
+        { name: "レッドスライム (火)", emoji: "👿", hp: 50, turn: 3 },
+        { name: "アクアナイト (水)", emoji: "🛡️", hp: 80, turn: 2 },
+        { name: "古代木霊獣 (BOSS)", emoji: "🦁", hp: 150, turn: 3 }
+    ],
 
-    async init() {
-        // 単語データの非同期ロード
-        try {
-            const response = await fetch('data/words.json');
-            this.wordsData = await response.json();
-        } catch (error) {
-            console.error("データのロードに失敗しました:", error);
-            // ロールバック用ローカルデータ（ファイル直接起動対策）
-            this.wordsData = { fire: [], water: [], wood: [] };
-        }
+    currentQuizWord: null,
+    quizTimer: null,
+    quizTimeLeft: 7,
 
-        // イベントリスナー登録
-        document.getElementById('btn-start-dungeon').addEventListener('click', () => this.startDungeon());
+    init() {
+        document.getElementById('btn-to-dungeon').addEventListener('click', () => this.startDungeon());
         document.getElementById('btn-start-battle').addEventListener('click', () => this.startBattlePhase());
-        document.getElementById('btn-return-home').addEventListener('click', () => this.showScreen('screen-home'));
+        document.getElementById('btn-result-to-home').addEventListener('click', () => window.GameUI.showHome());
 
-        // 属性パネルにリスナーを設定
         const panels = document.querySelectorAll('.panel-btn');
         panels.forEach(panel => {
             panel.addEventListener('click', (e) => {
@@ -55,17 +33,9 @@ class GameManager {
                 this.triggerQuiz(attr);
             });
         });
-    }
+    },
 
-    // 画面切り替えメソッド
-    showScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(screen => {
-            screen.style.display = 'none';
-        });
-        document.getElementById(screenId).style.display = 'flex';
-    }
-
-    // 1. ダンジョン挑戦開始
+    // 1. ダンジョン全体の開始
     startDungeon() {
         this.currentWave = 0;
         this.playerHp = this.playerMaxHp;
@@ -73,69 +43,88 @@ class GameManager {
         this.showScanPhase();
     }
 
-    // 2. エネミー・スキャン（インプットフェーズ）表示
+    // 2. インプット（エネミー・スキャン）フェーズ
     showScanPhase() {
         const scanList = document.getElementById('scan-list');
         scanList.innerHTML = '';
 
-        // このWAVEで出題される予定の単語（全属性から各1問ずつ抽出してプレビュー）
-        const attrs = ['fire', 'water', 'wood'];
-        attrs.forEach(attr => {
-            if (this.wordsData[attr] && this.wordsData[attr].length > 0) {
-                // 今回はシンプルにWAVEに応じた単語（WAVE1ならf_01、WAVE2ならf_02など）を取得
-                const wordObj = this.wordsData[attr][this.currentWave % this.wordsData[attr].length];
-                
-                const card = document.createElement('div');
-                card.className = 'scan-card';
-                card.innerHTML = `
-                    <h4>${wordObj.word} <span style="font-size:12px; color:#aaa;">[${wordObj.part_of_speech}]</span></h4>
-                    <p><strong>意味:</strong> ${wordObj.meaning}</p>
-                    <p class="scan-etymology">${wordObj.etymology}</p>
-                `;
-                scanList.appendChild(card);
-            }
+        // このWAVEで出題予定の単語をセレクトして、事前にスキャン表示
+        const db = window.GameStateManager.wordDatabase;
+        
+        // 開発運用を考慮：WAVE毎に3問の予習単語を選別
+        const startIdx = this.currentWave * 2;
+        const waveWords = db.slice(startIdx, startIdx + 3);
+
+        waveWords.forEach(word => {
+            // スキャンされただけで、セーブデータは「遭遇 (encountered)」にアップグレードされる
+            window.GameStateManager.encounterWord(word.id);
+
+            const card = document.createElement('div');
+            card.className = 'scan-card';
+            card.innerHTML = `
+                <h4>
+                    <span>${word.word} <span style="font-size:11px; color:#aaa;">[${word.part_of_speech}]</span></span>
+                    <button class="speak-btn">🔊</button>
+                </h4>
+                <p><strong>意味:</strong> ${word.meaning}</p>
+                <p style="font-size:11px; color:#f1c40f; margin-top:2px;"><strong>Phrase:</strong> ${word.phrase_mask} (${word.phrase_meaning})</p>
+                <p class="scan-etymology" style="font-size:11px; color:#888; margin-top:2px;">${word.etymology}</p>
+            `;
+
+            card.querySelector('.speak-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.GameUI.speakWord(word.word);
+            });
+
+            scanList.appendChild(card);
         });
 
-        this.showScreen('screen-scan');
+        window.GameUI.showScreen('screen-scan');
     }
 
-    // 3. バトルフェーズ（戦闘画面）開始
+    // 3. バトル開始（アウトプット）
     startBattlePhase() {
-        const settings = this.enemySettings[this.currentWave];
-        this.enemyHp = settings.hp;
-        this.enemyMaxHp = settings.hp;
-        this.enemyTurn = settings.turn;
-        this.enemyMaxTurn = settings.turn;
+        const config = this.enemyConfigs[this.currentWave];
+        this.enemyHp = config.hp;
+        this.enemyMaxHp = config.hp;
+        this.enemyTurn = config.turn;
+        this.enemyMaxTurn = config.turn;
 
         document.getElementById('stage-name').innerText = `基礎の森 (WAVE ${this.currentWave + 1}/${this.maxWave})`;
-        document.getElementById('enemy-name').innerText = settings.name;
-        document.getElementById('enemy-sprite').innerText = settings.emoji;
+        document.getElementById('enemy-name').innerText = config.name;
+        document.getElementById('enemy-sprite').innerText = config.emoji;
         
-        this.updateEnemyHpBar();
-        this.updateEnemyTurnText();
+        this.updateEnemyHp();
+        this.updateEnemyTurn();
         this.combo = 0;
-        this.updateComboText();
-        document.getElementById('battle-log').innerText = "攻撃したい属性のパネルを選択してください！";
+        this.updateCombo();
+        document.getElementById('battle-log').innerText = "攻撃したい属性のパネルを選択してください。";
 
-        this.showScreen('screen-battle');
+        // マスター済みキャラクターの表示
+        window.GameUI.renderBattleParty();
+
+        window.GameUI.showScreen('screen-battle');
     }
 
     // 4. クイズ出題処理
     triggerQuiz(attr) {
-        if (!this.wordsData[attr] || this.wordsData[attr].length === 0) return;
+        const db = window.GameStateManager.wordDatabase;
+        // 指定された属性（火・水・木）に対応する単語を抽出
+        const filtered = db.filter(x => x.attr === attr);
+        if (filtered.length === 0) return;
 
-        // WAVEに対応した単語を選択
-        const wordObj = this.wordsData[attr][this.currentWave % this.wordsData[attr].length];
+        // ランダム出題
+        const wordObj = filtered[Math.floor(Math.random() * filtered.length)];
         this.currentQuizWord = wordObj;
+
+        document.getElementById('normal-quiz-box').style.display = 'block';
+        document.getElementById('chase-quiz-box').style.display = 'none';
 
         document.getElementById('quiz-genre').innerText = `属性: ${attr.toUpperCase()} (${wordObj.part_of_speech})`;
         document.getElementById('quiz-word').innerText = wordObj.word;
 
-        // 4択選択肢の構築（1つの正解 ＋ 3つのAI生成ひっかけ誤答）
-        const choices = [wordObj.meaning, ...wordObj.distractors];
-        // ランダムシャッフル
-        choices.sort(() => Math.random() - 0.5);
-
+        // 4択選択肢のシャッフル
+        const choices = [wordObj.meaning, ...wordObj.distractors].sort(() => Math.random() - 0.5);
         const choicesBox = document.getElementById('quiz-choices');
         choicesBox.innerHTML = '';
 
@@ -143,126 +132,149 @@ class GameManager {
             const btn = document.createElement('button');
             btn.className = 'choice-btn';
             btn.innerText = choice;
-            btn.addEventListener('click', () => this.handleAnswer(choice));
+            btn.addEventListener('click', () => this.handleNormalAnswer(choice));
             choicesBox.appendChild(btn);
         });
 
-        // クイズオーバーレイを表示してタイマー起動
         document.getElementById('quiz-overlay').style.display = 'flex';
-        this.startQuizTimer();
+        this.startTimer();
     }
 
-    // タイマー管理
-    startQuizTimer() {
+    startTimer() {
         this.quizTimeLeft = 7;
         document.getElementById('quiz-timer').innerText = `⏱️ ${this.quizTimeLeft}s`;
-        
         clearInterval(this.quizTimer);
         this.quizTimer = setInterval(() => {
             this.quizTimeLeft--;
             document.getElementById('quiz-timer').innerText = `⏱️ ${this.quizTimeLeft}s`;
-
             if (this.quizTimeLeft <= 0) {
                 clearInterval(this.quizTimer);
-                this.handleAnswer(""); // 時間切れ（ミス）
+                this.handleNormalAnswer(""); // 時間切れミス
             }
         }, 1000);
     }
 
-    // クイズ解答判定
-    handleAnswer(selectedMeaning) {
+    // 5. 通常解答判定 ＆ ミニマル・フレーズ追撃トリガー
+    handleNormalAnswer(selected) {
         clearInterval(this.quizTimer);
-        document.getElementById('quiz-overlay').style.display = 'none';
+        const isCorrect = (selected === this.currentQuizWord.meaning);
 
-        const isCorrect = (selectedMeaning === this.currentQuizWord.meaning);
+        // 正解・不正解の結果をデータマネージャーに記録（ここでマスター化や親愛度判定を自動処理）
+        window.GameStateManager.recordResult(this.currentQuizWord.id, isCorrect);
 
         if (isCorrect) {
-            // 正解：プレイヤーのターン（ダメージ算出）
             this.combo++;
-            this.updateComboText();
-
-            // コンボ倍率を反映したダメージ
-            let baseDamage = 30;
-            let comboBonus = 1 + (this.combo - 1) * 0.1; // 1コンボ毎に10%アップ
-            let finalDamage = Math.floor(baseDamage * comboBonus);
-
-            this.enemyHp -= finalDamage;
-            if (this.enemyHp < 0) this.enemyHp = 0;
-            this.updateEnemyHpBar();
-
-            document.getElementById('battle-log').innerText = `正解！ ${this.combo}連鎖！敵に ${finalDamage} ダメージを与えた！`;
+            this.updateCombo();
+            
+            // 50%以上の確率、または仕様通りの追撃チャンス演出として追撃クイズを即座に開始
+            setTimeout(() => {
+                this.triggerChaseQuiz();
+            }, 600);
         } else {
-            // 不正解 or 時間切れ
             this.combo = 0;
-            this.updateComboText();
-            document.getElementById('battle-log').innerText = `不正解！攻撃失敗...。正解は「${this.currentQuizWord.meaning}」`;
+            this.updateCombo();
+            document.getElementById('quiz-overlay').style.display = 'none';
+            document.getElementById('battle-log').innerText = `ミス！正解は「${this.currentQuizWord.meaning}」`;
+            
+            this.endTurnProcess();
+        }
+    }
+
+    // 6. 追撃フェーズ（ミニマル・フレーズ穴埋めクイズ）
+    triggerChaseQuiz() {
+        const wordObj = this.currentQuizWord;
+        document.getElementById('normal-quiz-box').style.display = 'none';
+        document.getElementById('chase-quiz-box').style.display = 'block';
+
+        document.getElementById('chase-phrase').innerText = wordObj.phrase_mask;
+        document.getElementById('chase-phrase-jp').innerText = `(${wordObj.phrase_meaning})`;
+
+        // フレーズ穴埋め用の4択を作成
+        const choices = [wordObj.phrase_correct, ...wordObj.phrase_distractors].sort(() => Math.random() - 0.5);
+        const choicesBox = document.getElementById('chase-choices');
+        choicesBox.innerHTML = '';
+
+        choices.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerText = choice;
+            btn.addEventListener('click', () => this.handleChaseAnswer(choice));
+            choicesBox.appendChild(btn);
+        });
+    }
+
+    // 7. 追撃解答判定 ＆ 最終ダメージ確定
+    handleChaseAnswer(selected) {
+        document.getElementById('quiz-overlay').style.display = 'none';
+        const isCorrect = (selected === this.currentQuizWord.phrase_correct);
+
+        let baseDmg = 30;
+        let comboMult = 1 + (this.combo - 1) * 0.1;
+        let finalDmg = Math.floor(baseDmg * comboMult);
+
+        if (isCorrect) {
+            // クリティカル追撃成功
+            finalDmg = Math.floor(finalDmg * 2.0);
+            document.getElementById('battle-log').innerText = `⚡クリティカル追撃成功！⚡ ${finalDmg} ダメージ！`;
+        } else {
+            document.getElementById('battle-log').innerText = `通常攻撃成功！敵に ${finalDmg} ダメージ！`;
         }
 
-        // 敵の生存チェックおよびターン減少
+        this.enemyHp -= finalDmg;
+        if (this.enemyHp < 0) this.enemyHp = 0;
+        this.updateEnemyHp();
+
         setTimeout(() => {
             if (this.enemyHp <= 0) {
                 this.handleWaveClear();
             } else {
-                this.processEnemyTurn();
+                this.endTurnProcess();
             }
-        }, 1200);
+        }, 1000);
     }
 
-    // 敵のターン進行
-    processEnemyTurn() {
+    // 8. ターン終了時の処理
+    endTurnProcess() {
         this.enemyTurn--;
         if (this.enemyTurn <= 0) {
-            // 敵の攻撃（プレイヤー被ダメージ）
-            const enemyDamage = 25;
-            this.playerHp -= enemyDamage;
+            // 敵の攻撃
+            const dmg = 25;
+            this.playerHp -= dmg;
             if (this.playerHp < 0) this.playerHp = 0;
             this.updatePlayerHpBar();
-            
-            document.getElementById('battle-log').innerText = `敵からの強烈な反撃！ ${enemyDamage} のダメージを受けた！`;
-            this.enemyTurn = this.enemyMaxTurn; // ターンリセット
 
-            // 敗北チェック
+            document.getElementById('battle-log').innerText += ` 敵の反撃！${dmg}ダメージ！`;
+            this.enemyTurn = this.enemyMaxTurn;
+
             if (this.playerHp <= 0) {
                 setTimeout(() => {
-                    alert("PLAYER HPが0になりました。ゲームオーバーです。ホームに戻って復習しましょう。");
-                    this.showScreen('screen-home');
+                    alert("敗北しました。ホームに戻り、図鑑で苦手な単語を復習してください。");
+                    window.GameUI.showHome();
                 }, 1000);
                 return;
             }
         }
-        this.updateEnemyTurnText();
+        this.updateEnemyTurn();
     }
 
-    // WAVEクリア
     handleWaveClear() {
         if (this.currentWave < this.maxWave - 1) {
             this.currentWave++;
-            document.getElementById('battle-log').innerText = "敵を撃破しました！次の敵の解析に移ります。";
-            setTimeout(() => {
-                this.showScanPhase();
-            }, 1500);
+            document.getElementById('battle-log').innerText = "敵を討伐！次のエネミーの弱点を解析します。";
+            setTimeout(() => this.showScanPhase(), 1200);
         } else {
-            // ダンジョン完全クリア
-            this.showResultScreen();
+            // クリア画面へ
+            window.GameUI.showScreen('screen-result');
         }
     }
 
-    // リザルト表示
-    showResultScreen() {
-        this.ep += 15; // EP報酬
-        document.getElementById('ep-display').innerText = this.ep;
-        document.getElementById('res-ep').innerText = "15";
-        
-        const finalReward = this.enemySettings[this.maxWave - 1].reward;
-        document.getElementById('res-drop').innerText = finalReward;
-
-        this.showScreen('screen-result');
-    }
-
-    // UI更新補助メソッド
-    updateEnemyHpBar() {
+    updateEnemyHp() {
         const pct = (this.enemyHp / this.enemyMaxHp) * 100;
         document.getElementById('enemy-hp').style.width = `${pct}%`;
+    }
+
+    updateEnemyTurn() {
+        document.getElementById('enemy-turn').innerText = `あと ${this.enemyTurn} ターン`;
     }
 
     updatePlayerHpBar() {
@@ -271,16 +283,22 @@ class GameManager {
         document.getElementById('player-hp-text-num').innerText = this.playerHp;
     }
 
-    updateEnemyTurnText() {
-        document.getElementById('enemy-turn').innerText = `あと ${this.enemyTurn} ターン`;
-    }
-
-    updateComboText() {
+    updateCombo() {
         document.getElementById('combo-display').innerText = `${this.combo} COMBO`;
     }
-}
+};
 
-// 起動
-window.addEventListener('DOMContentLoaded', () => {
-    new GameManager();
+// ゲーム全体のメイン起動エントリーポイント
+window.GameUI.showScreen = function(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+    document.getElementById(screenId).style.display = 'flex';
+};
+
+window.addEventListener('DOMContentLoaded', async () => {
+    // 1. データマネージャーで単語ロード 
+    await window.GameStateManager.loadDatabase();
+    // 2. UI初期化
+    window.GameUI.init();
+    // 3. バトル処理初期化
+    window.GameController.init();
 });
