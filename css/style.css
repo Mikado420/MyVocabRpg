@@ -8,30 +8,27 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    min-height: 100dvh; /* dvhでモバイルブラウザの伸縮に対応 */
+    min-height: 100dvh;
     margin: 0;
     padding: 0;
-    overflow: hidden; /* ブラウザ全体の縦スクロールを完全に禁止 */
+    overflow: hidden;
 }
 
-/* ゲーム全体のコンテナ（スマホでは画面いっぱいに広がるレスポンシブ設計） */
 #game-window {
     width: 100%;
-    max-width: 420px; /* PC閲覧時でもスマホアプリの比率を維持する上限幅 */
+    max-width: 420px;
     height: 100vh;
-    height: 100dvh; /* 全画面フィット */
+    height: 100dvh;
     background-color: #2b231d;
     border: 4px solid #b38f43;
     border-radius: 12px;
     position: relative;
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* 外へのはみ出しを一切許さない */
+    overflow: hidden;
 }
 
-/* ==================== 
-   上部ステータスヘッダー
-   ==================== */
+/* 上部ステータスヘッダー */
 #game-header {
     background: linear-gradient(180deg, #423830, #201813);
     border-bottom: 2px solid #5a4b41;
@@ -40,7 +37,7 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 3px;
     z-index: 10;
-    flex-shrink: 0; /* ヘッダーが縮むのを防止 */
+    flex-shrink: 0;
 }
 .player-profile { display: flex; align-items: center; gap: 5px; }
 .rank-badge {
@@ -53,7 +50,7 @@ body {
     border-radius: 3px;
 }
 .player-name { font-size: 12px; font-weight: bold; color: #e2d1c3; text-shadow: 1px 1px 1px #000; }
-.exp-box { grid-column: 1 / 3; display: flex; flex-direction: column; gap: 1px; }
+.exp-box { display: flex; flex-direction: column; gap: 1px; grid-column: 1 / 3; }
 .exp-label { font-size: 8px; color: #bdc3c7; font-weight: bold; }
 .bar-container { width: 100%; height: 6px; background-color: #111; border-radius: 3px; border: 1px solid #444; overflow: hidden; }
 .bar-fill { height: 100%; transition: width 0.3s ease-out; }
@@ -71,12 +68,10 @@ body {
 }
 .currency-item { display: flex; align-items: center; gap: 3px; }
 
-/* ====================
-   伸縮するメイン表示領域
-   ==================== */
+/* 伸縮するメイン表示領域 */
 #game-main {
     flex-grow: 1;
-    overflow: hidden; /* コンテナ外へのはみ出しを防止 */
+    overflow: hidden;
     position: relative;
     padding: 10px;
     display: flex;
@@ -84,13 +79,7 @@ body {
 }
 
 /* 各タブ画面 */
-.tab-screen {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* スクロールは必要パーツのみで */
-}
+.tab-screen { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
 
 /* ダンジョン選択 */
 .banner-area {
@@ -130,19 +119,17 @@ body {
 .btn-danger:hover { filter: brightness(1.1); }
 .btn-locked { background: linear-gradient(180deg, #555, #333); color: #888; border-color: #444; cursor: not-allowed; box-shadow: none; }
 
-/* ====================
-   オーバーレイ（バトル等。全画面フィット）
-   ==================== */
+/* フルスクリーンオーバーレイ画面 */
 .overlay-screen {
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 50px; /* 下部フッタータブのすぐ上までぴったりカバー */
+    top: 0; left: 0; right: 0; bottom: 50px;
     background-color: #1a1512;
     z-index: 20;
     padding: 12px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    overflow: hidden; /* オーバーレイ画面そのものの縦スクロールは禁止 */
+    overflow: hidden;
 }
 
 /* エネミースキャン */
@@ -159,13 +146,7 @@ body {
 }
 .section-desc { font-size: 10px; color: #aaa; margin: 6px 0; text-align: center; flex-shrink: 0; }
 
-/* 修正箇所：スキャン単語リストのみ枠内スクロール */
-#scan-list {
-    flex-grow: 1;
-    overflow-y: auto;
-    margin-bottom: 8px;
-    padding-right: 2px;
-}
+#scan-list { flex-grow: 1; overflow-y: auto; margin-bottom: 8px; padding-right: 2px; }
 .scan-card {
     background: #33261f;
     border-left: 5px solid #27ae60;
@@ -192,12 +173,10 @@ body {
     flex-shrink: 0;
 }
 
-/* ====================
-   バトル画面演出・レイアウト
-   ==================== */
+/* バトル画面 */
 .stage-header { display: flex; justify-content: space-between; font-size: 10px; color: #888; flex-shrink: 0; }
 
-/* クイズ正解時のフラッシュ */
+/* クイズ正解時フラッシュ */
 .flash-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -212,9 +191,9 @@ body {
     100% { background: rgba(255, 255, 255, 0); }
 }
 
-/* 敵モンスターエリア */
+/* 敵エリア */
 .enemy-area {
-    height: 140px; /* 高さを縮小 */
+    height: 140px;
     background: radial-gradient(circle, #3a221d, #110d0a);
     border: 2px solid #4a3429;
     border-radius: 8px;
@@ -225,7 +204,7 @@ body {
     position: relative;
     padding: 8px;
     overflow: hidden;
-    flex-shrink: 1; /* 比率が短い端末では自動的に少し縮む */
+    flex-shrink: 1;
 }
 .enemy-area.shake { animation: shakeEffect 0.4s ease-in-out; }
 @keyframes shakeEffect {
@@ -246,17 +225,11 @@ body {
 }
 #enemy-turn::before { content: "あと "; font-size: 9px; color: #e74c3c; }
 
-.enemy-hp-text {
-    font-size: 10px;
-    color: #bdc3c7;
-    font-weight: bold;
-    margin-top: 3px;
-    text-shadow: 1px 1px 1px #000;
-}
+.enemy-hp-text { font-size: 10px; color: #bdc3c7; font-weight: bold; margin-top: 3px; text-shadow: 1px 1px 1px #000; }
 .enemy-hp-container { width: 80%; background-color: #222; height: 7px; }
 .enemy-hp-fill { background: linear-gradient(90deg, #c0392b, #e74c3c); }
 
-/* ドロップ突撃アニメーション */
+/* ドロップ突撃 */
 .attack-particle {
     position: absolute;
     width: 28px;
@@ -277,7 +250,7 @@ body {
     100% { transform: translateY(-50px) scale(1.6); opacity: 0; }
 }
 
-/* プレイヤー/パーティエリア */
+/* プレイヤーエリア */
 .player-area { background-color: #261d18; border: 1px solid #5a4b41; padding: 6px; border-radius: 8px; flex-shrink: 0; }
 .party-list { display: flex; justify-content: space-around; margin-bottom: 4px; height: 32px; }
 .party-member {
@@ -301,7 +274,7 @@ body {
 
 #battle-log { min-height: 32px; font-size: 11px; color: #ddd; text-align: center; padding: 4px; background: #000; border-radius: 4px; border: 1px solid #444; flex-shrink: 0; }
 
-/* 属性クイズ選択パネル */
+/* クイズパネル */
 .panel-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex-shrink: 0; }
 .panel-btn {
     padding: 12px 0;
@@ -314,9 +287,7 @@ body {
     box-shadow: inset 0 2px 3px rgba(255,255,255,0.2), 0 3px 4px rgba(0,0,0,0.4);
 }
 
-/* ====================
-   クイズオーバーレイ
-   ==================== */
+/* クイズオーバーレイ */
 #quiz-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; z-index: 999; }
 .quiz-box { width: 92%; background: #2b231d; border: 2px solid #b38f43; border-radius: 12px; padding: 12px; text-align: center; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
 #quiz-timer { position: absolute; top: 8px; right: 12px; font-size: 11px; color: #e74c3c; font-weight: bold; }
@@ -337,12 +308,26 @@ body {
    図鑑（単語帳）UI
    ==================== */
 .dict-control { border-bottom: 1px solid #5a4b41; padding-bottom: 6px; flex-shrink: 0; }
-.dict-control h3 { font-size: 14px; color: #f1c40f; margin-bottom: 3px; }
+.dict-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.dict-control h3 { font-size: 14px; color: #f1c40f; }
+
+/* 新規追加：パズドラ風セレクトボックス */
+.pazd-select {
+    background-color: #110d0a;
+    border: 1px solid #b38f43;
+    color: #f1c40f;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 6px;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+}
+
 .dict-tab-box { display: flex; justify-content: space-around; }
 .sub-tab-btn { background: none; border: none; color: #888; font-weight: bold; cursor: pointer; padding: 4px 8px; font-size: 11px; }
 .sub-tab-btn.active { color: #f1c40f; border-bottom: 2px solid #f1c40f; }
 
-/* 修正箇所：図鑑グリッドのみ枠内スクロール */
 .dict-grid {
     flex-grow: 1;
     overflow-y: auto;
@@ -352,7 +337,7 @@ body {
     padding: 8px 0;
 }
 
-/* カードの段階的解放 */
+/* カード解放ステータス */
 .dict-card { background: #231c17; border-radius: 6px; padding: 6px; display: flex; flex-direction: column; align-items: center; position: relative; border: 1px solid #4a3429; }
 .dict-card.state-none { opacity: 0.4; }
 .dict-card.state-none .card-sprite { filter: brightness(0); }
@@ -388,9 +373,7 @@ body {
 .others-container h3 { color: #f1c40f; font-size: 14px; margin-bottom: 6px; }
 .credits { text-align: center; color: #777; font-size: 10px; margin-top: 30px; line-height: 1.5; }
 
-/* ====================
-   下部タブバー（完全固定）
-   ==================== */
+/* 下部タブバー（完全固定） */
 #game-footer {
     height: 50px;
     background: linear-gradient(180deg, #3d3128, #1c1511);
@@ -398,7 +381,7 @@ body {
     display: flex;
     justify-content: space-around;
     z-index: 10;
-    flex-shrink: 0; /* フッターの縮小を防ぐ */
+    flex-shrink: 0;
 }
 .footer-tab { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #8c7b72; transition: color 0.2s; }
 .footer-tab.active { color: #f1c40f; background: rgba(241, 196, 15, 0.05); border-top: 2px solid #f1c40f; margin-top: -2px; }
