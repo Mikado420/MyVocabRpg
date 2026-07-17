@@ -1,0 +1,286 @@
+/* リセットと全体レイアウト */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 10px;
+}
+
+/* ゲーム全体のコンテナ（パズドラ風スマホサイズ固定） */
+#game-window {
+    width: 375px;
+    height: 667px;
+    background-color: #1e1e1e;
+    border: 3px solid #333;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 画面共通定義 */
+.screen {
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* ホーム画面 */
+.title {
+    text-align: center;
+    font-size: 28px;
+    color: #f1c40f;
+    margin-top: 40px;
+}
+.subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: #888;
+}
+.user-stats {
+    background: #2c2c2c;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 40px 0;
+}
+
+/* ボタン装飾 */
+.menu-btn, .primary-btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.menu-btn {
+    background-color: #34495e;
+    color: white;
+}
+.menu-btn:hover { background-color: #2c3e50; }
+.primary-btn {
+    background-color: #27ae60;
+    color: white;
+}
+.primary-btn:hover { background-color: #219653; }
+
+/* エネミー・スキャン画面 */
+.scan-header {
+    text-align: center;
+    border-bottom: 2px solid #e74c3c;
+    padding-bottom: 10px;
+}
+.scan-alert {
+    color: #e74c3c;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+.scan-desc {
+    font-size: 13px;
+    color: #aaa;
+    margin: 15px 0;
+    line-height: 1.4;
+}
+#scan-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+.scan-card {
+    background-color: #2d3436;
+    border-left: 5px solid #27ae60;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+.scan-card h4 {
+    color: #f1c40f;
+    font-size: 18px;
+    margin-bottom: 4px;
+}
+.scan-card p {
+    font-size: 13px;
+    color: #ddd;
+}
+.scan-etymology {
+    font-size: 11px !important;
+    color: #7f8c8d !important;
+    margin-top: 5px;
+}
+
+/* バトル画面 UI */
+.stage-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #888;
+}
+.enemy-container {
+    height: 180px;
+    background: #000;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 10px;
+}
+#enemy-sprite { font-size: 56px; }
+#enemy-name { font-weight: bold; margin: 5px 0; }
+.hp-bar-container {
+    width: 80%;
+    height: 10px;
+    background-color: #444;
+    border-radius: 5px;
+    overflow: hidden;
+}
+.hp-bar {
+    height: 100%;
+    background-color: #e74c3c;
+    transition: width 0.3s ease-out;
+}
+#enemy-turn {
+    font-size: 12px;
+    color: #f1c40f;
+    margin-top: 5px;
+}
+
+/* プレイヤー・チームエリア */
+.player-container {
+    background-color: #2c3e50;
+    padding: 10px;
+    border-radius: 8px;
+}
+.party-list {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 8px;
+}
+.party-member {
+    width: 45px;
+    height: 45px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+.char-fire { background-color: #e74c3c; color: white; }
+.char-water { background-color: #3498db; color: white; }
+.char-wood { background-color: #2ecc71; color: white; }
+.player-hp-box { background-color: #1a252f; width: 100%; }
+.player-hp-fill { background-color: #2ecc71; }
+.player-hp-text {
+    font-size: 11px;
+    text-align: right;
+    margin-top: 3px;
+    color: #bdc3c7;
+}
+
+/* ログ */
+#battle-log {
+    min-height: 40px;
+    font-size: 13px;
+    color: #ccc;
+    text-align: center;
+    padding: 5px;
+    background: #111;
+    border-radius: 4px;
+}
+
+/* パネル */
+.panel-box {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+.panel-btn {
+    padding: 15px 0;
+    border-radius: 8px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+.panel-fire { background-color: #e74c3c; color: white; }
+.panel-water { background-color: #3498db; color: white; }
+.panel-wood { background-color: #2ecc71; color: white; }
+
+/* クイズオーバーレイ */
+#quiz-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+.quiz-box {
+    width: 90%;
+    background: #2c3e50;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+}
+#quiz-timer {
+    position: absolute;
+    top: 10px; right: 15px;
+    font-size: 14px;
+    color: #e74c3c;
+    font-weight: bold;
+}
+#quiz-genre {
+    font-size: 12px;
+    color: #f1c40f;
+    margin-bottom: 10px;
+}
+#quiz-word {
+    font-size: 26px;
+    margin-bottom: 20px;
+}
+.choice-btn {
+    width: 100%;
+    padding: 12px;
+    margin: 6px 0;
+    background-color: #34495e;
+    color: white;
+    border: 1px solid #555;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.1s;
+}
+.choice-btn:hover { background-color: #4e6a85; }
+
+/* リザルト */
+.result-stats {
+    background: #2d3436;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+.result-stats p {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
