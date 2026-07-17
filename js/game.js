@@ -22,14 +22,33 @@ window.GameController = {
     quizTimeLeft: 7,
 
     init() {
-        document.getElementById('btn-to-dungeon').addEventListener('click', () => this.startDungeon());
-        document.getElementById('btn-start-battle').addEventListener('click', () => this.startBattlePhase());
-        document.getElementById('btn-result-to-home').addEventListener('click', () => window.GameUI.showHome());
+        // ガード節を設けた安全なイベントリスナー登録
+        const btnToDungeon = document.getElementById('btn-to-dungeon');
+        if (btnToDungeon) {
+            btnToDungeon.addEventListener('click', () => this.startDungeon());
+        } else {
+            console.warn("警告: btn-to-dungeon が見つかりません");
+        }
 
+        const btnStartBattle = document.getElementById('btn-start-battle');
+        if (btnStartBattle) {
+            btnStartBattle.addEventListener('click', () => this.startBattlePhase());
+        } else {
+            console.warn("警告: btn-start-battle が見つかりません");
+        }
+
+        const btnResToHome = document.getElementById('btn-result-to-home');
+        if (btnResToHome) {
+            btnResToHome.addEventListener('click', () => window.GameUI.showHome());
+        } else {
+            console.warn("警告: btn-result-to-home が見つかりません");
+        }
+
+        // 属性パネルの安全なイベント登録
         const panels = document.querySelectorAll('.panel-btn');
         panels.forEach(panel => {
             panel.addEventListener('click', (e) => {
-                const attr = e.currentTarget.dataset.attr; // e.currentTargetに変更
+                const attr = e.currentTarget.dataset.attr;
                 this.triggerQuiz(attr);
             });
         });
@@ -40,10 +59,11 @@ window.GameController = {
         this.playerHp = this.playerMaxHp;
         this.updatePlayerHpBar();
         this.showScanPhase();
-    }
+    },
 
     showScanPhase() {
         const scanList = document.getElementById('scan-list');
+        if (!scanList) return;
         scanList.innerHTML = '';
 
         const db = window.GameStateManager.wordDatabase;
@@ -74,7 +94,7 @@ window.GameController = {
         });
 
         window.GameUI.showScreen('screen-scan');
-    }
+    },
 
     startBattlePhase() {
         const config = this.enemyConfigs[this.currentWave];
@@ -83,19 +103,26 @@ window.GameController = {
         this.enemyTurn = config.turn;
         this.enemyMaxTurn = config.turn;
 
-        document.getElementById('stage-name').innerText = `基礎の森 (WAVE ${this.currentWave + 1}/${this.maxWave})`;
-        document.getElementById('enemy-name').innerText = config.name;
-        document.getElementById('enemy-sprite').innerText = config.emoji;
+        const stageNameEl = document.getElementById('stage-name');
+        if (stageNameEl) stageNameEl.innerText = `基礎の森 (WAVE ${this.currentWave + 1}/${this.maxWave})`;
+
+        const enemyNameEl = document.getElementById('enemy-name');
+        if (enemyNameEl) enemyNameEl.innerText = config.name;
+
+        const enemySpriteEl = document.getElementById('enemy-sprite');
+        if (enemySpriteEl) enemySpriteEl.innerText = config.emoji;
         
         this.updateEnemyHp();
         this.updateEnemyTurn();
         this.combo = 0;
         this.updateCombo();
-        document.getElementById('battle-log').innerText = "攻撃したい属性のパネルを選択してください。";
+
+        const logEl = document.getElementById('battle-log');
+        if (logEl) logEl.innerText = "攻撃したい属性のパネルを選択してください。";
 
         window.GameUI.renderBattleParty();
         window.GameUI.showScreen('screen-battle');
-    }
+    },
 
     triggerQuiz(attr) {
         const db = window.GameStateManager.wordDatabase;
@@ -105,14 +132,21 @@ window.GameController = {
         const wordObj = filtered[Math.floor(Math.random() * filtered.length)];
         this.currentQuizWord = wordObj;
 
-        document.getElementById('normal-quiz-box').style.display = 'block';
-        document.getElementById('chase-quiz-box').style.display = 'none';
+        const normalBox = document.getElementById('normal-quiz-box');
+        if (normalBox) normalBox.style.display = 'block';
 
-        document.getElementById('quiz-genre').innerText = `属性: ${attr.toUpperCase()} (${wordObj.part_of_speech})`;
-        document.getElementById('quiz-word').innerText = wordObj.word;
+        const chaseBox = document.getElementById('chase-quiz-box');
+        if (chaseBox) chaseBox.style.display = 'none';
+
+        const quizGenreEl = document.getElementById('quiz-genre');
+        if (quizGenreEl) quizGenreEl.innerText = `属性: ${attr.toUpperCase()} (${wordObj.part_of_speech})`;
+
+        const quizWordEl = document.getElementById('quiz-word');
+        if (quizWordEl) quizWordEl.innerText = wordObj.word;
 
         const choices = [wordObj.meaning, ...wordObj.distractors].sort(() => Math.random() - 0.5);
         const choicesBox = document.getElementById('quiz-choices');
+        if (!choicesBox) return;
         choicesBox.innerHTML = '';
 
         choices.forEach(choice => {
@@ -123,29 +157,33 @@ window.GameController = {
             choicesBox.appendChild(btn);
         });
 
-        document.getElementById('quiz-overlay').style.display = 'flex';
+        const overlay = document.getElementById('quiz-overlay');
+        if (overlay) overlay.style.display = 'flex';
         this.startTimer();
-    }
+    },
 
     startTimer() {
         this.quizTimeLeft = 7;
-        document.getElementById('quiz-timer').innerText = `⏱️ ${this.quizTimeLeft}s`;
+        const timerEl = document.getElementById('quiz-timer');
+        if (timerEl) timerEl.innerText = `⏱️ ${this.quizTimeLeft}s`;
         clearInterval(this.quizTimer);
         this.quizTimer = setInterval(() => {
             this.quizTimeLeft--;
-            document.getElementById('quiz-timer').innerText = `⏱️ ${this.quizTimeLeft}s`;
+            if (timerEl) timerEl.innerText = `⏱️ ${this.quizTimeLeft}s`;
             if (this.quizTimeLeft <= 0) {
                 clearInterval(this.quizTimer);
                 this.handleNormalAnswer("");
             }
         }, 1000);
-    }
+    },
 
     handleNormalAnswer(selected) {
         clearInterval(this.quizTimer);
         const isCorrect = (selected === this.currentQuizWord.meaning);
 
         window.GameStateManager.recordResult(this.currentQuizWord.id, isCorrect);
+
+        const logEl = document.getElementById('battle-log');
 
         if (isCorrect) {
             this.combo++;
@@ -157,23 +195,31 @@ window.GameController = {
         } else {
             this.combo = 0;
             this.updateCombo();
-            document.getElementById('quiz-overlay').style.display = 'none';
-            document.getElementById('battle-log').innerText = `ミス！正解は「${this.currentQuizWord.meaning}」`;
+            const overlay = document.getElementById('quiz-overlay');
+            if (overlay) overlay.style.display = 'none';
+            if (logEl) logEl.innerText = `ミス！正解は「${this.currentQuizWord.meaning}」`;
             
             this.endTurnProcess();
         }
-    }
+    },
 
     triggerChaseQuiz() {
         const wordObj = this.currentQuizWord;
-        document.getElementById('normal-quiz-box').style.display = 'none';
-        document.getElementById('chase-quiz-box').style.display = 'block';
+        const normalBox = document.getElementById('normal-quiz-box');
+        if (normalBox) normalBox.style.display = 'none';
 
-        document.getElementById('chase-phrase').innerText = wordObj.phrase_mask;
-        document.getElementById('chase-phrase-jp').innerText = `(${wordObj.phrase_meaning})`;
+        const chaseBox = document.getElementById('chase-quiz-box');
+        if (chaseBox) chaseBox.style.display = 'block';
+
+        const phraseEl = document.getElementById('chase-phrase');
+        if (phraseEl) phraseEl.innerText = wordObj.phrase_mask;
+
+        const phraseJpEl = document.getElementById('chase-phrase-jp');
+        if (phraseJpEl) phraseJpEl.innerText = `(${wordObj.phrase_meaning})`;
 
         const choices = [wordObj.phrase_correct, ...wordObj.phrase_distractors].sort(() => Math.random() - 0.5);
         const choicesBox = document.getElementById('chase-choices');
+        if (!choicesBox) return;
         choicesBox.innerHTML = '';
 
         choices.forEach(choice => {
@@ -183,21 +229,25 @@ window.GameController = {
             btn.addEventListener('click', () => this.handleChaseAnswer(choice));
             choicesBox.appendChild(btn);
         });
-    }
+    },
 
     handleChaseAnswer(selected) {
-        document.getElementById('quiz-overlay').style.display = 'none';
+        const overlay = document.getElementById('quiz-overlay');
+        if (overlay) overlay.style.display = 'none';
+
         const isCorrect = (selected === this.currentQuizWord.phrase_correct);
 
         let baseDmg = 30;
         let comboMult = 1 + (this.combo - 1) * 0.1;
         let finalDmg = Math.floor(baseDmg * comboMult);
 
+        const logEl = document.getElementById('battle-log');
+
         if (isCorrect) {
             finalDmg = Math.floor(finalDmg * 2.0);
-            document.getElementById('battle-log').innerText = `⚡クリティカル追撃成功！⚡ ${finalDmg} ダメージ！`;
+            if (logEl) logEl.innerText = `⚡クリティカル追撃成功！⚡ ${finalDmg} ダメージ！`;
         } else {
-            document.getElementById('battle-log').innerText = `通常攻撃成功！敵に ${finalDmg} ダメージ！`;
+            if (logEl) logEl.innerText = `通常攻撃成功！敵に ${finalDmg} ダメージ！`;
         }
 
         this.enemyHp -= finalDmg;
@@ -211,7 +261,7 @@ window.GameController = {
                 this.endTurnProcess();
             }
         }, 1000);
-    }
+    },
 
     endTurnProcess() {
         this.enemyTurn--;
@@ -221,7 +271,8 @@ window.GameController = {
             if (this.playerHp < 0) this.playerHp = 0;
             this.updatePlayerHpBar();
 
-            document.getElementById('battle-log').innerText += ` 敵の反撃！${dmg}ダメージ！`;
+            const logEl = document.getElementById('battle-log');
+            if (logEl) logEl.innerText += ` 敵の反撃！${dmg}ダメージ！`;
             this.enemyTurn = this.enemyMaxTurn;
 
             if (this.playerHp <= 0) {
@@ -233,39 +284,45 @@ window.GameController = {
             }
         }
         this.updateEnemyTurn();
-    }
+    },
 
     handleWaveClear() {
         if (this.currentWave < this.maxWave - 1) {
             this.currentWave++;
-            document.getElementById('battle-log').innerText = "敵を討伐！次のエネミーの弱点を解析します。";
+            const logEl = document.getElementById('battle-log');
+            if (logEl) logEl.innerText = "敵を討伐！次のエネミーの弱点を解析します。";
             setTimeout(() => this.showScanPhase(), 1200);
         } else {
             window.GameUI.showScreen('screen-result');
         }
-    }
+    },
 
     updateEnemyHp() {
         const pct = (this.enemyHp / this.enemyMaxHp) * 100;
-        document.getElementById('enemy-hp').style.width = `${pct}%`;
-    }
+        const enemyHpEl = document.getElementById('enemy-hp');
+        if (enemyHpEl) enemyHpEl.style.width = `${pct}%`;
+    },
 
     updateEnemyTurn() {
-        document.getElementById('enemy-turn').innerText = `あと ${this.enemyTurn} ターン`;
-    }
+        const turnEl = document.getElementById('enemy-turn');
+        if (turnEl) turnEl.innerText = `あと ${this.enemyTurn} ターン`;
+    },
 
     updatePlayerHpBar() {
         const pct = (this.playerHp / this.playerMaxHp) * 100;
-        document.getElementById('player-hp').style.width = `${pct}%`;
-        document.getElementById('player-hp-text-num').innerText = this.playerHp;
-    }
+        const playerHpEl = document.getElementById('player-hp');
+        if (playerHpEl) playerHpEl.style.width = `${pct}%`;
+
+        const playerHpNumEl = document.getElementById('player-hp-text-num');
+        if (playerHpNumEl) playerHpNumEl.innerText = this.playerHp;
+    },
 
     updateCombo() {
-        document.getElementById('combo-display').innerText = `${this.combo} COMBO`;
+        const comboEl = document.getElementById('combo-display');
+        if (comboEl) comboEl.innerText = `${this.combo} COMBO`;
     }
 };
 
-// 共通の画面表示切り替えメソッド
 window.GameUI.showScreen = function(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
     const target = document.getElementById(screenId);
@@ -276,7 +333,6 @@ window.GameUI.showScreen = function(screenId) {
     }
 };
 
-// レースコンディションを完全に防止する堅牢なエントリーポイント設計
 async function startApp() {
     try {
         await window.GameStateManager.loadDatabase();
