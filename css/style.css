@@ -1,4 +1,6 @@
-/* 基本設定 */
+/* ==========================================
+   1. 基本設定
+   ========================================== */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
     background-color: #0b0908;
@@ -8,27 +10,30 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    min-height: 100dvh;
+    min-height: 100dvh; /* dvhでモバイルブラウザの伸縮に対応 */
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    overflow: hidden; /* ブラウザ全体の縦スクロールを完全に禁止 */
 }
 
+/* ゲーム全体のコンテナ（スマホでは画面いっぱいに広がるレスポンシブ設計） */
 #game-window {
     width: 100%;
-    max-width: 420px;
+    max-width: 420px; /* PC閲覧時でもスマホアプリの比率を維持する上限幅 */
     height: 100vh;
-    height: 100dvh;
+    height: 100dvh; /* 全画面フィット */
     background-color: #2b231d;
     border: 4px solid #b38f43;
     border-radius: 12px;
     position: relative;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: hidden; /* 外へのはみ出しを一切許さない */
 }
 
-/* 上部ヘッダー */
+/* ==========================================
+   2. 共通上部ステータスヘッダー
+   ========================================== */
 #game-header {
     background: linear-gradient(180deg, #423830, #201813);
     border-bottom: 2px solid #5a4b41;
@@ -37,7 +42,7 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 3px;
     z-index: 10;
-    flex-shrink: 0;
+    flex-shrink: 0; /* ヘッダーが縮むのを防止 */
 }
 .player-profile { display: flex; align-items: center; gap: 5px; }
 .rank-badge {
@@ -68,16 +73,19 @@ body {
 }
 .currency-item { display: flex; align-items: center; gap: 3px; }
 
-/* メイン表示領域 */
+/* ====================
+   3. 伸縮するメイン表示領域
+   ==================== */
 #game-main {
     flex-grow: 1;
-    overflow: hidden;
+    overflow: hidden; /* コンテナ外へのはみ出しを防止 */
     position: relative;
     padding: 10px;
     display: flex;
     flex-direction: column;
 }
 
+/* 各タブ画面 */
 .tab-screen { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
 
 /* ダンジョン選択 */
@@ -118,17 +126,19 @@ body {
 .btn-danger:hover { filter: brightness(1.1); }
 .btn-locked { background: linear-gradient(180deg, #555, #333); color: #888; border-color: #444; cursor: not-allowed; box-shadow: none; }
 
-/* フルスクリーンオーバーレイ画面 */
+/* ==========================================
+   4. フルスクリーンオーバーレイ画面 (バトル等)
+   ========================================== */
 .overlay-screen {
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 50px;
+    top: 0; left: 0; right: 0; bottom: 50px; /* 下部フッタータブのすぐ上までぴったりカバー */
     background-color: #1a1512;
     z-index: 20;
     padding: 12px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    overflow: hidden;
+    overflow: hidden; /* オーバーレイ画面そのものの縦スクロールは禁止 */
 }
 
 /* エネミースキャン */
@@ -145,7 +155,13 @@ body {
 }
 .section-desc { font-size: 10px; color: #aaa; margin: 6px 0; text-align: center; flex-shrink: 0; }
 
-#scan-list { flex-grow: 1; overflow-y: auto; margin-bottom: 8px; padding-right: 2px; }
+/* スキャン単語リストのみ枠内スクロール */
+#scan-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-bottom: 8px;
+    padding-right: 2px;
+}
 .scan-card {
     background: #33261f;
     border-left: 5px solid #27ae60;
@@ -172,7 +188,9 @@ body {
     flex-shrink: 0;
 }
 
-/* バトル画面 */
+/* ==========================================
+   5. バトル画面演出・レイアウト
+   ========================================== */
 .stage-header { display: flex; justify-content: space-between; font-size: 10px; color: #888; flex-shrink: 0; }
 
 /* クイズ正解時フラッシュ */
@@ -190,7 +208,7 @@ body {
     100% { background: rgba(255, 255, 255, 0); }
 }
 
-/* 敵エリア */
+/* 敵モンスターエリア（被弾時シェイク対応） */
 .enemy-area {
     height: 140px;
     background: radial-gradient(circle, #3a221d, #110d0a);
@@ -223,38 +241,41 @@ body {
     text-shadow: 1px 1px 2px #000;
 }
 #enemy-turn::before { content: "あと "; font-size: 9px; color: #e74c3c; }
-
 .enemy-hp-text { font-size: 10px; color: #bdc3c7; font-weight: bold; margin-top: 3px; text-shadow: 1px 1px 1px #000; }
 
-/* ====================
-   修正箇所：3D発光立体HPバー
-   ==================== */
+/* ==========================================
+   【HPバー共通定義】3D発光立体HPバー
+   ========================================== */
 .hp-bar-container {
-    width: 80%;
-    height: 12px; /* 太くして視認性を最大化 */
-    background-color: #1a1512;
+    width: 85%; /* 視認性の良い横幅 */
+    height: 14px; /* バーの存在感をはっきりと高める厚み */
+    background-color: #1a1512; /* 暗めの土壁ブラウン（バーが際立つコントラスト） */
     border: 1px solid #4a3429;
-    border-radius: 6px;
+    border-radius: 7px;
     overflow: hidden;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
     position: relative;
+    margin: 6px auto; /* 敵・味方エリアの双方で完璧に中央寄せを保証 */
 }
+
 .hp-bar {
     height: 100%;
     width: 100%;
     transition: width 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-    box-shadow: inset 0 2px 3px rgba(255,255,255,0.45); /* 内側白発光で立体感 */
+    box-shadow: inset 0 2px 3px rgba(255,255,255,0.45); /* 内側白発光による3D立体感 */
 }
+
 /* 敵専用のHPバーカラー */
 .enemy-hp-fill {
     background: linear-gradient(180deg, #ec7063, #cb4335);
 }
+
 /* プレイヤー専用の動的カラーチェンジ */
 .hp-green { background: linear-gradient(180deg, #58d68d, #27ae60); }
 .hp-yellow { background: linear-gradient(180deg, #f4d03f, #d4ac0d); }
 .hp-red { background: linear-gradient(180deg, #f1948a, #c0392b); }
 
-/* ドロップ突撃 */
+/* ドロップ突撃アニメーション */
 .attack-particle {
     position: absolute;
     width: 28px;
@@ -306,10 +327,9 @@ body {
 }
 
 .player-hp-text { font-size: 9px; text-align: right; margin-top: 1px; color: #bdc3c7; font-weight: bold; }
-
 #battle-log { min-height: 32px; font-size: 11px; color: #ddd; text-align: center; padding: 4px; background: #000; border-radius: 4px; border: 1px solid #444; flex-shrink: 0; }
 
-/* クイズパネル */
+/* クイズ選択パネル */
 .panel-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex-shrink: 0; }
 .panel-btn {
     padding: 12px 0;
@@ -322,7 +342,9 @@ body {
     box-shadow: inset 0 2px 3px rgba(255,255,255,0.2), 0 3px 4px rgba(0,0,0,0.4);
 }
 
-/* クイズオーバーレイ */
+/* ==========================================
+   6. クイズオーバーレイ
+   ========================================== */
 #quiz-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; z-index: 999; }
 .quiz-box { width: 92%; background: #2b231d; border: 2px solid #b38f43; border-radius: 12px; padding: 12px; text-align: center; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
 #quiz-timer { position: absolute; top: 8px; right: 12px; font-size: 11px; color: #e74c3c; font-weight: bold; }
@@ -339,7 +361,9 @@ body {
 #chase-phrase { font-size: 15px; color: #fff; margin-bottom: 2px; }
 #chase-phrase-jp { font-size: 10px; color: #95a5a6; margin-bottom: 10px; }
 
-/* 図鑑 UI */
+/* ==========================================
+   7. 図鑑（単語帳）UI
+   ========================================== */
 .dict-control { border-bottom: 1px solid #5a4b41; padding-bottom: 6px; flex-shrink: 0; }
 .dict-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
 .dict-control h3 { font-size: 14px; color: #f1c40f; }
@@ -361,6 +385,7 @@ body {
 .sub-tab-btn { background: none; border: none; color: #888; font-weight: bold; cursor: pointer; padding: 4px 8px; font-size: 11px; }
 .sub-tab-btn.active { color: #f1c40f; border-bottom: 2px solid #f1c40f; }
 
+/* 図鑑グリッド枠内スクロール */
 .dict-grid {
     flex-grow: 1;
     overflow-y: auto;
@@ -370,7 +395,7 @@ body {
     padding: 8px 0;
 }
 
-/* カード解放 */
+/* カードの段階的解放 */
 .dict-card { background: #231c17; border-radius: 6px; padding: 6px; display: flex; flex-direction: column; align-items: center; position: relative; border: 1px solid #4a3429; }
 .dict-card.state-none { opacity: 0.4; }
 .dict-card.state-none .card-sprite { filter: brightness(0); }
@@ -394,19 +419,25 @@ body {
 .fav-btn.active { color: #f1c40f; }
 .card-detail { font-size: 9px; color: #aaa; width: 100%; margin-top: 4px; padding-top: 4px; border-top: 1px solid #3d2f26; }
 
-/* ガチャ画面 */
+/* ==========================================
+   8. ガチャ画面
+   ========================================== */
 .gacha-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; }
 .gacha-dragon { font-size: 64px; margin-bottom: 12px; animation: gachaBounce 2s infinite; }
 .gacha-desc { font-size: 12px; color: #aaa; margin: 6px 0 12px; }
 .gacha-result-box { margin-top: 12px; padding: 12px; background-color: #1a221d; border: 1px solid #27ae60; border-radius: 8px; width: 85%; animation: popIn 0.3s ease-out; }
 @keyframes gachaBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
-/* その他 */
+/* ==========================================
+   9. その他画面
+   ========================================== */
 .others-container { display: flex; flex-direction: column; gap: 12px; }
 .others-container h3 { color: #f1c40f; font-size: 14px; margin-bottom: 6px; }
 .credits { text-align: center; color: #777; font-size: 10px; margin-top: 30px; line-height: 1.5; }
 
-/* 下部タブバー（固定） */
+/* ==========================================
+   10. 下部タブバー (完全固定)
+   ========================================== */
 #game-footer { height: 50px; background: linear-gradient(180deg, #3d3128, #1c1511); border-top: 2px solid #5a4b41; display: flex; justify-content: space-around; z-index: 10; flex-shrink: 0; }
 .footer-tab { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #8c7b72; transition: color 0.2s; }
 .footer-tab.active { color: #f1c40f; background: rgba(241, 196, 15, 0.05); border-top: 2px solid #f1c40f; margin-top: -2px; }
