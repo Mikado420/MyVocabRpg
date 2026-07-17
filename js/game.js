@@ -27,8 +27,6 @@ window.GameController = {
         const btnStartBattle = document.getElementById('btn-start-battle');
         if (btnStartBattle) {
             btnStartBattle.addEventListener('click', () => {
-                // 根本原因の修正：スキャン画面（ロック状態）からバトルに遷移するため、
-                // ロックを強制解除してからバトルフェーズを開始させる
                 this.isInputLocked = false;
                 this.startBattlePhase();
             });
@@ -52,23 +50,31 @@ window.GameController = {
         });
     },
 
-    startDungeon() {
+    // 修正箇所：ダンジョン開始時に、選択されたチャプター番号を非同期でロードする
+    async startDungeon(chapterNum) {
+        this.isInputLocked = true;
+        
+        // ターゲットのチャプターデータを動的にロードして保存データを補完
+        await window.GameStateManager.loadChapter(chapterNum);
+        
         this.currentWave = 0;
         this.playerHp = this.playerMaxHp;
         this.updatePlayerHpBar();
-        this.isInputLocked = false;
+        
         this.showScanPhase();
     },
 
     showScanPhase() {
-        this.isInputLocked = true; // スキャン画面（予習中）は戦闘パネルを押させない
+        this.isInputLocked = true;
         const scanList = document.getElementById('scan-list');
         if (!scanList) return;
         scanList.innerHTML = '';
 
         const db = window.GameStateManager.wordDatabase;
+        
+        // チャプター内の単語が少ない場合でも配列を飛び越えないよう保護
         const startIdx = this.currentWave * 2;
-        const waveWords = db.slice(startIdx, startIdx + 3);
+        const waveWords = db.slice(startIdx, Math.min(startIdx + 3, db.length));
 
         waveWords.forEach(word => {
             window.GameStateManager.encounterWord(word.id);
@@ -105,7 +111,9 @@ window.GameController = {
         this.enemyMaxTurn = config.turn;
 
         const stageNameEl = document.getElementById('stage-name');
-        if (stageNameEl) stageNameEl.innerText = `基礎の森 (WAVE ${this.currentWave + 1}/${this.maxWave})`;
+        if (stageNameEl) {
+            stageNameEl.innerText = `Ch.${window.GameStateManager.currentChapterNum} WAVE ${this.currentWave + 1}/${this.maxWave}`;
+        }
 
         const enemyNameEl = document.getElementById('enemy-name');
         if (enemyNameEl) enemyNameEl.innerText = config.name;
@@ -117,9 +125,6 @@ window.GameController = {
         this.updateEnemyTurn();
         this.combo = 0;
         this.updateCombo();
-
-        const logEl = document.getElementById('battle-log');
-        if (logEl) logEl.innerText = "攻撃したい属性のパネルを選択してください。";
 
         window.GameUI.renderBattleParty();
         window.GameUI.showScreen('screen-battle');
@@ -383,7 +388,8 @@ window.GameUI.showScreen = function(screenId) {
 
 async function startApp() {
     try {
-        await window.GameStateManager.loadDatabase();
+        // 初期状態ではChapter 1のデータベースをオンデマンドでロード
+        await window.GameStateManager.loadChapter(1);
         window.GameUI.init();
         window.GameController.init();
     } catch (error) {
