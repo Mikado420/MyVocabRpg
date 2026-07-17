@@ -1,13 +1,18 @@
 window.GameUI = {
     init() {
-        document.getElementById('btn-to-dictionary').addEventListener('click', () => this.showDictionary());
-        document.getElementById('btn-dict-back').addEventListener('click', () => this.showHome());
+        // 安全なイベントリスナーの登録（ガード節の導入）
+        const btnToDict = document.getElementById('btn-to-dictionary');
+        if (btnToDict) btnToDict.addEventListener('click', () => this.showDictionary());
+
+        const btnDictBack = document.getElementById('btn-dict-back');
+        if (btnDictBack) btnDictBack.addEventListener('click', () => this.showHome());
         
+        // 図鑑のタブ切り替え
         const tabs = document.querySelectorAll('.tab-btn');
         tabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
                 tabs.forEach(t => t.classList.remove('active'));
-                e.currentTarget.classList.add('active'); // e.currentTargetに変更
+                e.currentTarget.classList.add('active');
                 this.renderDictionary(e.currentTarget.dataset.tab);
             });
         });
@@ -21,8 +26,11 @@ window.GameUI = {
     },
 
     updateHomeStats() {
-        document.getElementById('player-rank').innerText = window.GameStateManager.saveData.rank;
-        document.getElementById('ep-display').innerText = window.GameStateManager.saveData.ep;
+        const rankEl = document.getElementById('player-rank');
+        if (rankEl) rankEl.innerText = window.GameStateManager.saveData.rank;
+
+        const epEl = document.getElementById('ep-display');
+        if (epEl) epEl.innerText = window.GameStateManager.saveData.ep;
     },
 
     showDictionary() {
@@ -32,6 +40,7 @@ window.GameUI = {
 
     renderDictionary(filterType = 'all') {
         const listContainer = document.getElementById('dict-list');
+        if (!listContainer) return;
         listContainer.innerHTML = '';
 
         const db = window.GameStateManager.wordDatabase;
@@ -93,8 +102,7 @@ window.GameUI = {
 
     speakWord(word) {
         if ('speechSynthesis' in window) {
-            // 前の発音をキャンセルして連打時のお詰まりを防止
-            window.speechSynthesis.cancel();
+            window.speechSynthesis.cancel(); // 連続再生詰まり防止
             const utterance = new SpeechSynthesisUtterance(word);
             utterance.lang = 'en-US';
             window.speechSynthesis.speak(utterance);
@@ -105,6 +113,7 @@ window.GameUI = {
 
     renderBattleParty() {
         const partyContainer = document.getElementById('battle-party');
+        if (!partyContainer) return;
         partyContainer.innerHTML = '';
 
         const db = window.GameStateManager.wordDatabase;
