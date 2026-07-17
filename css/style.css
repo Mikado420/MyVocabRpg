@@ -11,12 +11,11 @@ body {
     padding: 10px;
 }
 
-/* ゲーム全体のコンテナ（パズドラ風スマホサイズ固定） */
 #game-window {
     width: 375px;
     height: 667px;
-    background-color: #2b231d; /* 木目・土壁風の重厚なブラウン */
-    border: 4px solid #b38f43; /* ゴールドの高級感ある外枠 */
+    background-color: #2b231d;
+    border: 4px solid #b38f43;
     border-radius: 12px;
     overflow: hidden;
     position: relative;
@@ -24,9 +23,7 @@ body {
     flex-direction: column;
 }
 
-/* ==================== 
-   パズドラ風ステータスヘッダー
-   ==================== */
+/* 共通上部ステータスヘッダー */
 #game-header {
     background: linear-gradient(180deg, #423830, #201813);
     border-bottom: 2px solid #5a4b41;
@@ -36,11 +33,7 @@ body {
     gap: 4px;
     z-index: 10;
 }
-.player-profile {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
+.player-profile { display: flex; align-items: center; gap: 5px; }
 .rank-badge {
     background-color: #000;
     border: 1px solid #f1c40f;
@@ -50,38 +43,12 @@ body {
     padding: 1px 4px;
     border-radius: 4px;
 }
-.player-name {
-    font-size: 13px;
-    font-weight: bold;
-    color: #e2d1c3;
-    text-shadow: 1px 1px 1px #000;
-}
-.exp-box {
-    grid-column: 1 / 3;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-.exp-label {
-    font-size: 9px;
-    color: #bdc3c7;
-    font-weight: bold;
-}
-.bar-container {
-    width: 100%;
-    height: 8px;
-    background-color: #111;
-    border-radius: 4px;
-    border: 1px solid #444;
-    overflow: hidden;
-}
-.bar-fill {
-    height: 100%;
-    transition: width 0.3s ease-out;
-}
-.exp-fill {
-    background: linear-gradient(90deg, #f1c40f, #f39c12); /* 黄金色EXPバー */
-}
+.player-name { font-size: 13px; font-weight: bold; color: #e2d1c3; text-shadow: 1px 1px 1px #000; }
+.exp-box { grid-column: 1 / 3; display: flex; flex-direction: column; gap: 2px; }
+.exp-label { font-size: 9px; color: #bdc3c7; font-weight: bold; }
+.bar-container { width: 100%; height: 8px; background-color: #111; border-radius: 4px; border: 1px solid #444; overflow: hidden; }
+.bar-fill { height: 100%; transition: width 0.3s ease-out; }
+.exp-fill { background: linear-gradient(90deg, #f1c40f, #f39c12); }
 .currency-box {
     grid-column: 1 / 3;
     display: flex;
@@ -95,25 +62,11 @@ body {
 }
 .currency-item { display: flex; align-items: center; gap: 4px; }
 
-/* ====================
-   メイン表示領域
-   ==================== */
-#game-main {
-    flex-grow: 1;
-    overflow-y: auto;
-    position: relative;
-    padding: 12px;
-}
+/* メイン表示領域 */
+#game-main { flex-grow: 1; overflow-y: auto; position: relative; padding: 12px; }
+.tab-screen { width: 100%; height: 100%; display: flex; flex-direction: column; }
 
-/* 各タブ画面 */
-.tab-screen {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-/* バナーエリア（ダンジョン選択） */
+/* ダンジョン選択 */
 .banner-area {
     background: linear-gradient(135deg, #2c3e50, #1e272e);
     border: 2px solid #b38f43;
@@ -125,12 +78,8 @@ body {
 .banner-area h2 { color: #f1c40f; font-size: 18px; margin-bottom: 5px; }
 .banner-area p { font-size: 12px; color: #ccc; }
 
-/* パズドラ風：石板メニューボタン */
-.stone-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
+/* 石板メニューボタン */
+.stone-menu { display: flex; flex-direction: column; gap: 12px; }
 .stone-btn {
     width: 100%;
     padding: 15px;
@@ -145,29 +94,19 @@ body {
     transition: transform 0.1s, filter 0.2s;
     text-align: center;
 }
-.stone-btn:active {
-    transform: scale(0.98);
-}
+.stone-btn:active { transform: scale(0.98); }
 .btn-fire { background: linear-gradient(180deg, #c0392b, #7f0f0f); border-color: #e74c3c; }
 .btn-fire:hover { filter: brightness(1.1); }
 .btn-gacha { background: linear-gradient(180deg, #8e44ad, #4d1266); border-color: #9b59b6; }
 .btn-gacha:hover { filter: brightness(1.1); }
 .btn-danger { background: linear-gradient(180deg, #e74c3c, #962d22); border-color: #c0392b; }
 .btn-danger:hover { filter: brightness(1.1); }
-.btn-locked {
-    background: linear-gradient(180deg, #555, #333);
-    color: #888;
-    border-color: #444;
-    cursor: not-allowed;
-    box-shadow: none;
-}
+.btn-locked { background: linear-gradient(180deg, #555, #333); color: #888; border-color: #444; cursor: not-allowed; box-shadow: none; }
 
-/* ====================
-   フルスクリーンオーバーレイ画面
-   ==================== */
+/* フルスクリーンオーバーレイ画面 */
 .overlay-screen {
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 50px; /* フッタータブの上までカバー */
+    top: 0; left: 0; right: 0; bottom: 50px;
     background-color: #1a1512;
     z-index: 20;
     padding: 15px;
@@ -215,11 +154,26 @@ body {
 }
 
 /* ====================
-   バトル画面（画像2を反映）
+   バトル画面演出・レイアウト
    ==================== */
 .stage-header { display: flex; justify-content: space-between; font-size: 11px; color: #888; }
 
-/* 敵エリア */
+/* フラッシュ・白光オーバーレイ */
+.flash-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255, 255, 255, 0);
+    pointer-events: none;
+    z-index: 50;
+}
+.flash-white { animation: flashEffect 0.3s ease-out; }
+@keyframes flashEffect {
+    0% { background: rgba(255, 255, 255, 0); }
+    50% { background: rgba(255, 255, 255, 0.45); }
+    100% { background: rgba(255, 255, 255, 0); }
+}
+
+/* 敵モンスターエリア（シェイク対応） */
 .enemy-area {
     height: 160px;
     background: radial-gradient(circle, #3a221d, #110d0a);
@@ -231,7 +185,15 @@ body {
     justify-content: center;
     position: relative;
     padding: 10px;
+    overflow: hidden;
 }
+.enemy-area.shake { animation: shakeEffect 0.4s ease-in-out; }
+@keyframes shakeEffect {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+    20%, 40%, 60%, 80% { transform: translateX(6px); }
+}
+
 #enemy-sprite { font-size: 52px; z-index: 1; }
 #enemy-name { font-weight: bold; margin: 4px 0; font-size: 13px; color: #e2d1c3; }
 #enemy-turn {
@@ -242,21 +204,42 @@ body {
     color: #e74c3c;
     text-shadow: 1px 1px 2px #000;
 }
-#enemy-turn::before {
-    content: "あと ";
-    font-size: 10px;
-    color: #e74c3c;
+#enemy-turn::before { content: "あと "; font-size: 10px; color: #e74c3c; }
+
+/* 修正箇所：敵HP数値のスタイリング */
+.enemy-hp-text {
+    font-size: 11px;
+    color: #bdc3c7;
+    font-weight: bold;
+    margin-top: 4px;
+    text-shadow: 1px 1px 1px #000;
 }
 .enemy-hp-container { width: 80%; background-color: #222; }
-.enemy-hp-fill { background-gradient: linear-gradient(90deg, #c0392b, #e74c3c); background-color: #e74c3c; }
+.enemy-hp-fill { background: linear-gradient(90deg, #c0392b, #e74c3c); }
+
+/* 飛んでいく属性ドロップエフェクト */
+.attack-particle {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+}
+.particle-fire { background: radial-gradient(circle, #ff9ff3, #f53b57); }
+.particle-water { background: radial-gradient(circle, #81ecec, #0984e3); }
+.particle-wood { background: radial-gradient(circle, #55efc4, #00b894); }
+
+.shoot-up { animation: shootUpEffect 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+@keyframes shootUpEffect {
+    0% { transform: translateY(180px) scale(0.4); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translateY(-50px) scale(1.6); opacity: 0; }
+}
 
 /* プレイヤー/パーティエリア */
-.player-area {
-    background-color: #261d18;
-    border: 1px solid #5a4b41;
-    padding: 8px;
-    border-radius: 8px;
-}
+.player-area { background-color: #261d18; border: 1px solid #5a4b41; padding: 8px; border-radius: 8px; }
 .party-list { display: flex; justify-content: space-around; margin-bottom: 5px; height: 38px; }
 .party-member {
     width: 34px;
@@ -277,23 +260,10 @@ body {
 .player-hp-fill { background: linear-gradient(90deg, #2ecc71, #27ae60); }
 .player-hp-text { font-size: 10px; text-align: right; margin-top: 2px; color: #bdc3c7; font-weight: bold; }
 
-#battle-log {
-    min-height: 36px;
-    font-size: 11px;
-    color: #ddd;
-    text-align: center;
-    padding: 5px;
-    background: #000;
-    border-radius: 4px;
-    border: 1px solid #444;
-}
+#battle-log { min-height: 36px; font-size: 11px; color: #ddd; text-align: center; padding: 5px; background: #000; border-radius: 4px; border: 1px solid #444; }
 
-/* 4択属性クイズパネル（パズドラ風ドロップ盤面の面積） */
-.panel-box {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-}
+/* クイズパネル */
+.panel-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .panel-btn {
     padding: 14px 0;
     border-radius: 8px;
@@ -305,56 +275,24 @@ body {
     box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 3px 5px rgba(0,0,0,0.4);
 }
 
-/* ====================
-   クイズオーバーレイ
-   ==================== */
-#quiz-overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.85);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 999;
-}
-.quiz-box {
-    width: 90%;
-    background: #2b231d;
-    border: 2px solid #b38f43;
-    border-radius: 12px;
-    padding: 15px;
-    text-align: center;
-    position: relative;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-}
+/* クイズオーバーレイ */
+#quiz-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; z-index: 999; }
+.quiz-box { width: 90%; background: #2b231d; border: 2px solid #b38f43; border-radius: 12px; padding: 15px; text-align: center; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
 #quiz-timer { position: absolute; top: 10px; right: 15px; font-size: 13px; color: #e74c3c; font-weight: bold; }
 #quiz-genre { font-size: 11px; color: #f1c40f; margin-bottom: 5px; }
 #quiz-word { font-size: 24px; margin-bottom: 15px; color: #fff; }
 .choices-container { display: flex; flex-direction: column; gap: 5px; }
-.choice-btn {
-    width: 100%;
-    padding: 10px;
-    background-color: #3e332a;
-    color: white;
-    border: 1px solid #5a4b41;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    text-align: left;
-    padding-left: 15px;
-}
+.choice-btn { width: 100%; padding: 10px; background-color: #3e332a; color: white; border: 1px solid #5a4b41; border-radius: 6px; cursor: pointer; font-size: 13px; text-align: left; padding-left: 15px; }
 .choice-btn:hover { background-color: #5a4b41; }
 
-/* 追撃クイズ専用 */
+/* 追撃クイズ */
 .chase-box { background: #1c232c !important; border: 2px solid #f1c40f; }
 .chase-header { color: #f1c40f; font-weight: bold; font-size: 15px; margin-bottom: 5px; }
 .chase-desc { font-size: 10px; color: #aaa; margin-bottom: 8px; }
 #chase-phrase { font-size: 17px; color: #fff; margin-bottom: 4px; }
 #chase-phrase-jp { font-size: 11px; color: #95a5a6; margin-bottom: 12px; }
 
-/* ====================
-   図鑑（単語帳）UI
-   ==================== */
+/* 図鑑（単語帳）UI */
 .dict-control { border-bottom: 1px solid #5a4b41; padding-bottom: 8px; }
 .dict-control h3 { font-size: 16px; color: #f1c40f; margin-bottom: 5px; }
 .dict-tab-box { display: flex; justify-content: space-around; }
@@ -362,17 +300,8 @@ body {
 .sub-tab-btn.active { color: #f1c40f; border-bottom: 2px solid #f1c40f; }
 .dict-grid { flex-grow: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 0 20px; }
 
-/* カードの段階的解放 */
-.dict-card {
-    background: #231c17;
-    border-radius: 8px;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    border: 1px solid #4a3429;
-}
+/* カード段階的解放 */
+.dict-card { background: #231c17; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; align-items: center; position: relative; border: 1px solid #4a3429; }
 .dict-card.state-none { opacity: 0.4; }
 .dict-card.state-none .card-sprite { filter: brightness(0); }
 .dict-card.state-none .card-detail, .dict-card.state-none .fav-btn { display: none; }
@@ -395,58 +324,22 @@ body {
 .fav-btn.active { color: #f1c40f; }
 .card-detail { font-size: 10px; color: #aaa; width: 100%; margin-top: 5px; padding-top: 5px; border-top: 1px solid #3d2f26; }
 
-/* ガチャ画面 */
+/* ガチャ */
 .gacha-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; }
-.gacha-dragon { font-size: 80px; margin-bottom: 20px; animation: bounce 2s infinite; }
+.gacha-dragon { font-size: 80px; margin-bottom: 20px; animation: gachaBounce 2s infinite; }
 .gacha-desc { font-size: 13px; color: #aaa; margin: 10px 0 20px; }
-.gacha-result-box {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #1a221d;
-    border: 1px solid #27ae60;
-    border-radius: 8px;
-    width: 80%;
-    animation: popIn 0.3s ease-out;
-}
-@keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-}
+.gacha-result-box { margin-top: 20px; padding: 15px; background-color: #1a221d; border: 1px solid #27ae60; border-radius: 8px; width: 80%; animation: popIn 0.3s ease-out; }
+@keyframes gachaBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-/* その他画面 */
+/* その他 */
 .others-container { display: flex; flex-direction: column; gap: 15px; }
 .others-container h3 { color: #f1c40f; font-size: 16px; margin-bottom: 10px; }
 .credits { text-align: center; color: #777; font-size: 11px; margin-top: 40px; line-height: 1.6; }
 
-/* ====================
-   パズドラ風：共通下部タブバー
-   ==================== */
-#game-footer {
-    height: 50px;
-    background: linear-gradient(180deg, #3d3128, #1c1511);
-    border-top: 2px solid #5a4b41;
-    display: flex;
-    justify-content: space-around;
-    z-index: 10;
-}
-.footer-tab {
-    flex: 1;
-    background: none;
-    border: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: #8c7b72;
-    transition: color 0.2s;
-}
-.footer-tab.active {
-    color: #f1c40f;
-    background: rgba(241, 196, 15, 0.05);
-    border-top: 2px solid #f1c40f;
-    margin-top: -2px; /* アクティブなタブを強調 */
-}
+/* 共通下部タブバー */
+#game-footer { height: 50px; background: linear-gradient(180deg, #3d3128, #1c1511); border-top: 2px solid #5a4b41; display: flex; justify-content: space-around; z-index: 10; }
+.footer-tab { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #8c7b72; transition: color 0.2s; }
+.footer-tab.active { color: #f1c40f; background: rgba(241, 196, 15, 0.05); border-top: 2px solid #f1c40f; margin-top: -2px; }
 .tab-icon { font-size: 18px; }
 .tab-text { font-size: 9px; font-weight: bold; margin-top: 2px; }
 
