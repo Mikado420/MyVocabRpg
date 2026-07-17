@@ -27,7 +27,7 @@
 
         <!-- 1画面完結：伸縮するメインコンテンツ領域 -->
         <main id="game-main">
-            <!-- 1. ダンジョン（ホーム）タブ -->
+            <!-- ダンジョン（ホーム）タブ -->
             <div id="tab-dungeon" class="tab-screen">
                 <div class="banner-area">
                     <h2>ダンジョン選択</h2>
@@ -40,12 +40,11 @@
                 </div>
             </div>
 
-            <!-- 2. 図鑑（単語帳）タブ -->
+            <!-- 図鑑（単語帳）タブ -->
             <div id="tab-dictionary" class="tab-screen" style="display: none;">
                 <div class="dict-control">
                     <div class="dict-title-row">
                         <h3>単語図鑑</h3>
-                        <!-- 新規追加：チャプターオンデマンド切り替え用UI -->
                         <select id="dict-chapter-select" class="pazd-select">
                             <option value="1">第1章 (基礎)</option>
                             <option value="2">第2章 (必修)</option>
@@ -60,7 +59,7 @@
                 <div id="dict-list" class="dict-grid"></div>
             </div>
 
-            <!-- 3. 単語ガチャタブ -->
+            <!-- 単語ガチャタブ -->
             <div id="tab-gacha" class="tab-screen" style="display: none;">
                 <div class="gacha-container">
                     <div class="gacha-dragon">🐲</div>
@@ -71,14 +70,14 @@
                 </div>
             </div>
 
-            <!-- 4. その他タブ -->
+            <!-- その他タブ -->
             <div id="tab-others" class="tab-screen" style="display: none;">
                 <div class="others-container">
                     <h3>その他メニュー</h3>
                     <div class="stone-menu">
                         <button id="btn-reset-data" class="stone-btn btn-danger">セーブデータをリセット</button>
                         <div class="credits">
-                            <p>英単語クイズRPG v2.5</p>
+                            <p>英単語クイズRPG v2.6</p>
                             <p>GitHub共同開発用設計モデル</p>
                         </div>
                     </div>
@@ -86,7 +85,7 @@
             </div>
         </main>
 
-        <!-- 5. エネミー・スキャン画面 (バトル突入オーバーレイ) -->
+        <!-- エネミー・スキャン画面 (バトル突入オーバーレイ) -->
         <div id="screen-scan" class="overlay-screen" style="display: none;">
             <div class="header-banner">⚠️ ENEMY DETECTED ⚠️</div>
             <p class="section-desc">このバトルの敵の弱点（出題される英単語）を検知しました。頭に叩き込んでください！</p>
@@ -94,7 +93,7 @@
             <button id="btn-start-battle" class="primary-btn-pazd">解析完了！バトル開始</button>
         </div>
 
-        <!-- 6. バトル画面 (オーバーレイ) -->
+        <!-- バトル画面 (オーバーレイ) -->
         <div id="screen-battle" class="overlay-screen" style="display: none;">
             <div id="flash-effect-panel" class="flash-overlay"></div>
             <div class="stage-header">
@@ -107,17 +106,20 @@
                 <div id="enemy-turn">3</div>
                 <div id="enemy-sprite">👿</div>
                 <div id="enemy-name">スライム</div>
-                <div class="hp-bar-container enemy-hp-container">
+                <div class="hp-bar-container">
                     <div id="enemy-hp" class="hp-bar enemy-hp-fill" style="width: 100%;"></div>
                 </div>
                 <div class="enemy-hp-text">HP: <span id="enemy-hp-text-num">100</span> / <span id="enemy-hp-max-num">100</span></div>
             </div>
 
-            <!-- プレイヤー・味方チームエリア -->
+            <!-- プレイヤー・味方チームエリア (パズドラ風) -->
             <div class="player-area">
+                <!-- スキル発動時のガイド -->
+                <div class="skill-guide-text">※スキル明滅時にキャラタップでスキル発動！</div>
                 <div class="party-list" id="battle-party"></div>
-                <div class="hp-bar-container player-hp-box">
-                    <div id="player-hp" class="hp-bar player-hp-fill" style="width: 100%;"></div>
+                <!-- 修正箇所：黒背景の競合を廃止し、3D発光HPバーに統一 -->
+                <div class="hp-bar-container">
+                    <div id="player-hp" class="hp-bar hp-green" style="width: 100%;"></div>
                 </div>
                 <div class="player-hp-text">HP: <span id="player-hp-text-num">100</span>/100</div>
             </div>
@@ -133,7 +135,7 @@
             </div>
         </div>
 
-        <!-- 7. クイズ表示オーバーレイ -->
+        <!-- クイズ表示オーバーレイ -->
         <div id="quiz-overlay" style="display: none;">
             <!-- 通常4択クイズ -->
             <div class="quiz-box" id="normal-quiz-box">
@@ -153,7 +155,7 @@
             </div>
         </div>
 
-        <!-- 8. リザルト画面 -->
+        <!-- リザルト画面 -->
         <div id="screen-result" class="overlay-screen" style="display: none;">
             <h2 id="result-title">🎉 STAGE CLEAR !</h2>
             <div class="result-stats">
