@@ -119,7 +119,6 @@ window.GameStateManager = {
             }
         }
         
-        // セーブデータの健全性保証（古いフォーマットからのマイグレーション）
         if (!this.saveData || typeof this.saveData !== 'object') {
             this.saveData = { rank: 1, ep: 100, gold: 500, words: {} };
         }
@@ -130,7 +129,6 @@ window.GameStateManager = {
         if (typeof this.saveData.ep !== 'number') this.saveData.ep = 100;
         if (typeof this.saveData.gold !== 'number') this.saveData.gold = 500;
         
-        // 未踏ステート補完
         if (this.wordDatabase && Array.isArray(this.wordDatabase)) {
             this.wordDatabase.forEach(word => {
                 if (!this.saveData.words[word.id]) {
@@ -163,7 +161,6 @@ window.GameStateManager = {
 
         if (isCorrect) {
             record.correct_count++;
-            // 累計3回正解で完全解放（マスター）
             if (record.status !== 'mastered' && record.correct_count >= 3) {
                 record.status = 'mastered';
                 setTimeout(() => {
@@ -188,7 +185,6 @@ window.GameStateManager = {
         }
     },
 
-    // マスター（カラー解放）した単語数から学習EXP率を算出する
     calculateExpProgress() {
         if (!this.wordDatabase || this.wordDatabase.length === 0) return 0;
         let masteredCount = 0;
