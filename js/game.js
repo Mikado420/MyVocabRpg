@@ -21,20 +21,30 @@ window.GameController = {
     quizTimer: null,
     quizTimeLeft: 7,
 
+    // 修正箇所：連打割り込みバグを防止するためのステートロックフラグ
+    isInputLocked: false,
+
     init() {
         const btnStartBattle = document.getElementById('btn-start-battle');
         if (btnStartBattle) {
-            btnStartBattle.addEventListener('click', () => this.startBattlePhase());
+            btnStartBattle.addEventListener('click', () => {
+                if (this.isInputLocked) return;
+                this.startBattlePhase();
+            });
         }
 
         const btnResToHome = document.getElementById('btn-result-to-home');
         if (btnResToHome) {
-            btnResToHome.addEventListener('click', () => window.GameUI.showHome());
+            btnResToHome.addEventListener('click', () => {
+                this.isInputLocked = false; // ロック解除して戻る
+                window.GameUI.showHome();
+            });
         }
 
         const panels = document.querySelectorAll('.panel-btn');
         panels.forEach(panel => {
             panel.addEventListener('click', (e) => {
+                if (this.isInputLocked) return; // ロック中ならクイズのパネル選択を無効化
                 const attr = e.currentTarget.dataset.attr;
                 this.triggerQuiz(attr);
             });
@@ -45,10 +55,12 @@ window.GameController = {
         this.currentWave = 0;
         this.playerHp = this.playerMaxHp;
         this.updatePlayerHpBar();
+        this.isInputLocked = false; // ダンジョン開始時に入力ロックを解除
         this.showScanPhase();
     },
 
     showScanPhase() {
+        this.isInputLocked = true; // スキャン画面（予習中）は戦闘パネルを押させない
         const scanList = document.getElementById('scan-list');
         if (!scanList) return;
         scanList.innerHTML = '';
@@ -80,11 +92,11 @@ window.GameController = {
             scanList.appendChild(card);
         });
 
-        // スキャン画面オーバーレイを表示
         window.GameUI.showScreen('screen-scan');
     },
 
     startBattlePhase() {
+        this.isInputLocked = false; // バトルフェーズ開始時にのみプレイヤーの入力を許可
         const config = this.enemyConfigs[this.currentWave];
         this.enemyHp = config.hp;
         this.enemyMaxHp = config.hp;
@@ -113,9 +125,15 @@ window.GameController = {
     },
 
     triggerQuiz(attr) {
+        if (this.isInputLocked) return;
+        this.isInputLocked = true; // クイズ中は戦闘パネルの再入力をロック
+
         const db = window.GameStateManager.wordDatabase;
         const filtered = db.filter(x => x.attr === attr);
-        if (filtered.length === 0) return;
+        if (filtered.length === 0) {
+            this.isInputLocked = false;
+            return;
+        }
 
         const wordObj = filtered[Math.floor(Math.random() * filtered.length)];
         this.currentQuizWord = wordObj;
@@ -177,6 +195,7 @@ window.GameController = {
             this.combo++;
             this.updateCombo();
             
+            // クイズ解答完了 ➔ 追撃開始までロックは維持
             setTimeout(() => {
                 this.triggerChaseQuiz();
             }, 600);
@@ -231,29 +250,63 @@ window.GameController = {
 
         const logEl = document.getElementById('battle-log');
 
+        // 正解演出（フラッシュ＋エフェクト）
         if (isCorrect) {
             finalDmg = Math.floor(finalDmg * 2.0);
             if (logEl) logEl.innerText = `⚡クリティカル追撃成功！⚡ ${finalDmg} ダメージ！`;
+            this.playAttackEffect(this.currentQuizWord.attr, true); // フラッシュあり
         } else {
             if (logEl) logEl.innerText = `通常攻撃成功！敵に ${finalDmg} ダメージ！`;
+            this.playAttackEffect(this.currentQuizWord.attr, false);
         }
 
         this.enemyHp -= finalDmg;
         if (this.enemyHp < 0) this.enemyHp = 0;
         this.updateEnemyHp();
 
+        // 演出時間を考慮し、ダメージ確定後の判定を遅延処理（ロック維持）
         setTimeout(() => {
             if (this.enemyHp <= 0) {
                 this.handleWaveClear();
             } else {
                 this.endTurnProcess();
             }
-        }, 1000);
+        }, 1100);
+    },
+
+    // 没入感強化のための「属性攻撃エフェクト＆フラッシュ＆シェイク」演出
+    playAttackEffect(attr, isCritical) {
+        const enemyArea = document.querySelector('.enemy-area');
+        const flashPanel = document.getElementById('flash-effect-panel');
+        if (!enemyArea) return;
+
+        // 1. 属性別パーティクル弾を生成
+        const particle = document.createElement('div');
+        particle.className = `attack-particle particle-${attr} shoot-up`;
+        enemyArea.appendChild(particle);
+
+        // 2. クリティカル時の全体ホワイトフラッシュ
+        if (isCritical && flashPanel) {
+            flashPanel.classList.add('flash-white');
+            setTimeout(() => {
+                flashPanel.classList.remove('flash-white');
+            }, 300);
+        }
+
+        // 3. 弾の着弾タイミング（0.6秒）に合わせたシェイク（敵被弾）演出
+        setTimeout(() => {
+            particle.remove();
+            enemyArea.classList.add('shake');
+            setTimeout(() => {
+                enemyArea.classList.remove('shake');
+            }, 400);
+        }, 600);
     },
 
     endTurnProcess() {
         this.enemyTurn--;
         if (this.enemyTurn <= 0) {
+            // 敵から反撃を受ける処理
             const dmg = 25;
             this.playerHp -= dmg;
             if (this.playerHp < 0) this.playerHp = 0;
@@ -266,12 +319,14 @@ window.GameController = {
             if (this.playerHp <= 0) {
                 setTimeout(() => {
                     alert("敗北しました。ホームに戻り、図鑑で苦手な単語を復習してください。");
+                    this.isInputLocked = false; // 敗北時にロック解除
                     window.GameUI.showHome();
                 }, 1000);
                 return;
             }
         }
         this.updateEnemyTurn();
+        this.isInputLocked = false; // 敵の反撃処理、または通常攻撃判定が終了した段階でプレイヤーの入力を許可
     },
 
     handleWaveClear() {
@@ -279,22 +334,33 @@ window.GameController = {
             this.currentWave++;
             const logEl = document.getElementById('battle-log');
             if (logEl) logEl.innerText = "敵を討伐！次のエネミーの弱点を解析します。";
-            setTimeout(() => this.showScanPhase(), 1200);
+            
+            // WAVEクリアディレイ（予習画面への安全な移行。遷移時までロック維持）
+            setTimeout(() => {
+                this.showScanPhase();
+            }, 1200);
         } else {
-            // リザルト画面
+            // ダンジョン完全攻略（リザルト。ロック維持）
             window.GameUI.showScreen('screen-result');
         }
     },
 
+    // 修正箇所：敵のHPを現在値/最大値のビジュアル付きで更新
     updateEnemyHp() {
         const pct = (this.enemyHp / this.enemyMaxHp) * 100;
         const enemyHpEl = document.getElementById('enemy-hp');
         if (enemyHpEl) enemyHpEl.style.width = `${pct}%`;
+
+        const enemyHpNumEl = document.getElementById('enemy-hp-text-num');
+        if (enemyHpNumEl) enemyHpNumEl.innerText = this.enemyHp;
+
+        const enemyHpMaxEl = document.getElementById('enemy-hp-max-num');
+        if (enemyHpMaxEl) enemyHpMaxEl.innerText = this.enemyMaxHp;
     },
 
     updateEnemyTurn() {
         const turnEl = document.getElementById('enemy-turn');
-        if (turnEl) turnEl.innerText = this.enemyTurn; // パズドラ同様「あと ○」のテキストはCSSで付与
+        if (turnEl) turnEl.innerText = this.enemyTurn;
     },
 
     updatePlayerHpBar() {
@@ -313,16 +379,13 @@ window.GameController = {
 };
 
 window.GameUI.showScreen = function(screenId) {
-    // スキャン、バトル、リザルトはフルスクリーンのオーバーレイとして処理
     const overlays = ['screen-scan', 'screen-battle', 'screen-result'];
     
     if (overlays.includes(screenId)) {
-        // オーバーレイ画面を表示
         document.querySelectorAll('.overlay-screen').forEach(s => s.style.display = 'none');
         const target = document.getElementById(screenId);
         if (target) target.style.display = 'flex';
     } else {
-        // 通常のタブ画面を切り替え
         document.querySelectorAll('.overlay-screen').forEach(s => s.style.display = 'none');
         window.GameUI.switchTabScreen(screenId);
     }
