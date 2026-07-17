@@ -29,13 +29,12 @@ window.GameController = {
         const panels = document.querySelectorAll('.panel-btn');
         panels.forEach(panel => {
             panel.addEventListener('click', (e) => {
-                const attr = e.target.dataset.attr;
+                const attr = e.currentTarget.dataset.attr; // e.currentTargetに変更
                 this.triggerQuiz(attr);
             });
         });
     },
 
-    // 1. ダンジョン全体の開始
     startDungeon() {
         this.currentWave = 0;
         this.playerHp = this.playerMaxHp;
@@ -43,20 +42,15 @@ window.GameController = {
         this.showScanPhase();
     }
 
-    // 2. インプット（エネミー・スキャン）フェーズ
     showScanPhase() {
         const scanList = document.getElementById('scan-list');
         scanList.innerHTML = '';
 
-        // このWAVEで出題予定の単語をセレクトして、事前にスキャン表示
         const db = window.GameStateManager.wordDatabase;
-        
-        // 開発運用を考慮：WAVE毎に3問の予習単語を選別
         const startIdx = this.currentWave * 2;
         const waveWords = db.slice(startIdx, startIdx + 3);
 
         waveWords.forEach(word => {
-            // スキャンされただけで、セーブデータは「遭遇 (encountered)」にアップグレードされる
             window.GameStateManager.encounterWord(word.id);
 
             const card = document.createElement('div');
@@ -82,7 +76,6 @@ window.GameController = {
         window.GameUI.showScreen('screen-scan');
     }
 
-    // 3. バトル開始（アウトプット）
     startBattlePhase() {
         const config = this.enemyConfigs[this.currentWave];
         this.enemyHp = config.hp;
@@ -100,20 +93,15 @@ window.GameController = {
         this.updateCombo();
         document.getElementById('battle-log').innerText = "攻撃したい属性のパネルを選択してください。";
 
-        // マスター済みキャラクターの表示
         window.GameUI.renderBattleParty();
-
         window.GameUI.showScreen('screen-battle');
     }
 
-    // 4. クイズ出題処理
     triggerQuiz(attr) {
         const db = window.GameStateManager.wordDatabase;
-        // 指定された属性（火・水・木）に対応する単語を抽出
         const filtered = db.filter(x => x.attr === attr);
         if (filtered.length === 0) return;
 
-        // ランダム出題
         const wordObj = filtered[Math.floor(Math.random() * filtered.length)];
         this.currentQuizWord = wordObj;
 
@@ -123,7 +111,6 @@ window.GameController = {
         document.getElementById('quiz-genre').innerText = `属性: ${attr.toUpperCase()} (${wordObj.part_of_speech})`;
         document.getElementById('quiz-word').innerText = wordObj.word;
 
-        // 4択選択肢のシャッフル
         const choices = [wordObj.meaning, ...wordObj.distractors].sort(() => Math.random() - 0.5);
         const choicesBox = document.getElementById('quiz-choices');
         choicesBox.innerHTML = '';
@@ -149,24 +136,21 @@ window.GameController = {
             document.getElementById('quiz-timer').innerText = `⏱️ ${this.quizTimeLeft}s`;
             if (this.quizTimeLeft <= 0) {
                 clearInterval(this.quizTimer);
-                this.handleNormalAnswer(""); // 時間切れミス
+                this.handleNormalAnswer("");
             }
         }, 1000);
     }
 
-    // 5. 通常解答判定 ＆ ミニマル・フレーズ追撃トリガー
     handleNormalAnswer(selected) {
         clearInterval(this.quizTimer);
         const isCorrect = (selected === this.currentQuizWord.meaning);
 
-        // 正解・不正解の結果をデータマネージャーに記録（ここでマスター化や親愛度判定を自動処理）
         window.GameStateManager.recordResult(this.currentQuizWord.id, isCorrect);
 
         if (isCorrect) {
             this.combo++;
             this.updateCombo();
             
-            // 50%以上の確率、または仕様通りの追撃チャンス演出として追撃クイズを即座に開始
             setTimeout(() => {
                 this.triggerChaseQuiz();
             }, 600);
@@ -180,7 +164,6 @@ window.GameController = {
         }
     }
 
-    // 6. 追撃フェーズ（ミニマル・フレーズ穴埋めクイズ）
     triggerChaseQuiz() {
         const wordObj = this.currentQuizWord;
         document.getElementById('normal-quiz-box').style.display = 'none';
@@ -189,7 +172,6 @@ window.GameController = {
         document.getElementById('chase-phrase').innerText = wordObj.phrase_mask;
         document.getElementById('chase-phrase-jp').innerText = `(${wordObj.phrase_meaning})`;
 
-        // フレーズ穴埋め用の4択を作成
         const choices = [wordObj.phrase_correct, ...wordObj.phrase_distractors].sort(() => Math.random() - 0.5);
         const choicesBox = document.getElementById('chase-choices');
         choicesBox.innerHTML = '';
@@ -203,7 +185,6 @@ window.GameController = {
         });
     }
 
-    // 7. 追撃解答判定 ＆ 最終ダメージ確定
     handleChaseAnswer(selected) {
         document.getElementById('quiz-overlay').style.display = 'none';
         const isCorrect = (selected === this.currentQuizWord.phrase_correct);
@@ -213,7 +194,6 @@ window.GameController = {
         let finalDmg = Math.floor(baseDmg * comboMult);
 
         if (isCorrect) {
-            // クリティカル追撃成功
             finalDmg = Math.floor(finalDmg * 2.0);
             document.getElementById('battle-log').innerText = `⚡クリティカル追撃成功！⚡ ${finalDmg} ダメージ！`;
         } else {
@@ -233,11 +213,9 @@ window.GameController = {
         }, 1000);
     }
 
-    // 8. ターン終了時の処理
     endTurnProcess() {
         this.enemyTurn--;
         if (this.enemyTurn <= 0) {
-            // 敵の攻撃
             const dmg = 25;
             this.playerHp -= dmg;
             if (this.playerHp < 0) this.playerHp = 0;
@@ -263,7 +241,6 @@ window.GameController = {
             document.getElementById('battle-log').innerText = "敵を討伐！次のエネミーの弱点を解析します。";
             setTimeout(() => this.showScanPhase(), 1200);
         } else {
-            // クリア画面へ
             window.GameUI.showScreen('screen-result');
         }
     }
@@ -288,17 +265,30 @@ window.GameController = {
     }
 };
 
-// ゲーム全体のメイン起動エントリーポイント
+// 共通の画面表示切り替えメソッド
 window.GameUI.showScreen = function(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-    document.getElementById(screenId).style.display = 'flex';
+    const target = document.getElementById(screenId);
+    if (target) {
+        target.style.display = 'flex';
+    } else {
+        console.error(`Screen ID not found: ${screenId}`);
+    }
 };
 
-window.addEventListener('DOMContentLoaded', async () => {
-    // 1. データマネージャーで単語ロード 
-    await window.GameStateManager.loadDatabase();
-    // 2. UI初期化
-    window.GameUI.init();
-    // 3. バトル処理初期化
-    window.GameController.init();
-});
+// レースコンディションを完全に防止する堅牢なエントリーポイント設計
+async function startApp() {
+    try {
+        await window.GameStateManager.loadDatabase();
+        window.GameUI.init();
+        window.GameController.init();
+    } catch (error) {
+        console.error("アプリケーションの起動中にエラーが発生しました:", error);
+    }
+}
+
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', startApp);
+} else {
+    startApp();
+}
