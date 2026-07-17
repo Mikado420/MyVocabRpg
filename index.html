@@ -9,50 +9,108 @@
 <body>
 
     <div id="game-window">
-        <!-- 1. ホーム画面 -->
-        <div id="screen-home" class="screen">
-            <h1 class="title">英単語クイズRPG</h1>
-            <p class="subtitle">〜システム英単語準拠〜</p>
-            <div class="user-stats">
-                <div>Rank: <span id="player-rank">1</span></div>
-                <div>所持EP: <span id="ep-display">100</span></div>
+        <!-- パズドラ風：共通上部ステータスヘッダー -->
+        <header id="game-header">
+            <div class="player-profile">
+                <span class="rank-badge">Lv.<span id="player-rank">1</span></span>
+                <span class="player-name">受験戦士</span>
             </div>
-            <div class="menu-box">
-                <!-- 根本修正：IDを btn-to-dungeon に統一 -->
-                <button id="btn-to-dungeon" class="menu-btn primary-btn">第1章：基礎の森 に挑戦</button>
-                <button id="btn-to-dictionary" class="menu-btn secondary-btn">図鑑（単語帳）を開く</button>
-                <button id="btn-to-infinite" class="menu-btn secondary-btn lock-btn">総合演習：無限の試練 (EP 50消費)</button>
+            <div class="exp-box">
+                <div class="exp-label">EXP (単語定着度)</div>
+                <div class="bar-container"><div id="exp-bar" class="bar-fill exp-fill" style="width: 15%;"></div></div>
             </div>
-        </div>
+            <div class="currency-box">
+                <div class="currency-item"><span class="icon-gem">💎</span><span id="ep-display">100</span></div>
+                <div class="currency-item"><span class="icon-coin">🪙</span><span id="gold-display">500</span></div>
+            </div>
+        </header>
 
-        <!-- 2. エネミー・スキャン画面 (インプット) -->
-        <div id="screen-scan" class="screen" style="display: none;">
+        <!-- メイン表示領域（タブ切り替え） -->
+        <main id="game-main">
+            <!-- 1. ダンジョン（ホーム）タブ -->
+            <div id="tab-dungeon" class="tab-screen">
+                <div class="banner-area">
+                    <h2>Chapter 1：基礎の森</h2>
+                    <p>大学入学共通テスト基礎レベル</p>
+                </div>
+                <div class="stone-menu">
+                    <button id="btn-to-dungeon" class="stone-btn btn-fire">第1章：Section 1 (1〜100) に挑戦</button>
+                    <button class="stone-btn btn-locked">第2章：Section 2 (101〜200) [未解放]</button>
+                    <button class="stone-btn btn-locked">第3章：Section 3 (201〜300) [未解放]</button>
+                </div>
+            </div>
+
+            <!-- 2. 図鑑（単語帳）タブ -->
+            <div id="tab-dictionary" class="tab-screen" style="display: none;">
+                <div class="dict-control">
+                    <h3>キャラクター図鑑 (単語帳)</h3>
+                    <div class="dict-tab-box">
+                        <button class="sub-tab-btn active" data-tab="all">すべて</button>
+                        <button class="sub-tab-btn" data-tab="mastered">マスター</button>
+                        <button class="sub-tab-btn" data-tab="favorite">お気に入り</button>
+                    </div>
+                </div>
+                <div id="dict-list" class="dict-grid">
+                    <!-- 動的に単語キャラが生成されます -->
+                </div>
+            </div>
+
+            <!-- 3. 単語ガチャタブ -->
+            <div id="tab-gacha" class="tab-screen" style="display: none;">
+                <div class="gacha-container">
+                    <div class="gacha-dragon">🐲</div>
+                    <h3>英単語召喚ガチャ</h3>
+                    <p class="gacha-desc">1回召喚：15 EP (所持EPに応じて引けます)</p>
+                    <button id="btn-gacha-pull" class="stone-btn btn-gacha">召喚（ガチャを引く）</button>
+                    <div id="gacha-result" class="gacha-result-box" style="display: none;">
+                        <!-- ガチャ結果表示 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. その他タブ -->
+            <div id="tab-others" class="tab-screen" style="display: none;">
+                <div class="others-container">
+                    <h3>その他メニュー</h3>
+                    <div class="stone-menu">
+                        <button id="btn-reset-data" class="stone-btn btn-danger">セーブデータをリセット</button>
+                        <div class="credits">
+                            <p>英単語クイズRPG v2.0</p>
+                            <p>GitHub共同開発用設計モデル</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 5. エネミー・スキャン画面 (バトル突入用：フルスクリーンオーバーレイ) -->
+        <div id="screen-scan" class="overlay-screen" style="display: none;">
             <div class="header-banner">⚠️ ENEMY DETECTED ⚠️</div>
-            <p class="section-desc">このバトルの敵が苦手とする英単語（弱点）を解析しました。直後のバトルで必ず出題されます！</p>
+            <p class="section-desc">このバトルの敵の弱点（出題される英単語）を検知しました。頭に叩き込んでください！</p>
             <div id="scan-list">
                 <!-- 動的にスキャンカードが追加されます -->
             </div>
-            <button id="btn-start-battle" class="primary-btn">解析完了！バトル開始</button>
+            <button id="btn-start-battle" class="primary-btn-pazd">解析完了！バトル開始</button>
         </div>
 
-        <!-- 3. バトル画面 (アウトプット) -->
-        <div id="screen-battle" class="screen" style="display: none;">
+        <!-- 6. バトル画面 (フルスクリーンオーバーレイ) -->
+        <div id="screen-battle" class="overlay-screen" style="display: none;">
             <div class="stage-header">
-                <span id="stage-name">Chapter 1 Section 1</span>
+                <span id="stage-name">Section 1 (WAVE 1/3)</span>
                 <span id="combo-display">0 COMBO</span>
             </div>
 
-            <!-- 敵表示 -->
+            <!-- 敵モンスターエリア -->
             <div class="enemy-area">
+                <div id="enemy-turn">あと 3</div>
                 <div id="enemy-sprite">👿</div>
                 <div id="enemy-name">スライム</div>
-                <div class="hp-bar-container">
+                <div class="hp-bar-container enemy-hp-container">
                     <div id="enemy-hp" class="hp-bar enemy-hp-fill" style="width: 100%;"></div>
                 </div>
-                <div id="enemy-turn">あと 3 ターン</div>
             </div>
 
-            <!-- チーム編成・プレイヤーHP -->
+            <!-- プレイヤー・味方チームエリア（パズドラ風） -->
             <div class="player-area">
                 <div class="party-list" id="battle-party">
                     <!-- チームメンバー（マスター済みのみ） -->
@@ -64,9 +122,9 @@
             </div>
 
             <!-- バトルログ -->
-            <div id="battle-log">攻撃する属性を選択してください。</div>
+            <div id="battle-log">攻撃したい属性のパネルを選択してください！</div>
 
-            <!-- 属性パネル -->
+            <!-- パネル選択領域 -->
             <div class="panel-box">
                 <button class="panel-btn panel-fire" data-attr="fire">火 (動詞)</button>
                 <button class="panel-btn panel-water" data-attr="water">水 (名詞)</button>
@@ -74,7 +132,7 @@
             </div>
         </div>
 
-        <!-- 4. クイズオーバーレイ -->
+        <!-- 7. クイズ表示オーバーレイ -->
         <div id="quiz-overlay" style="display: none;">
             <!-- 通常4択クイズ -->
             <div class="quiz-box" id="normal-quiz-box">
@@ -94,35 +152,39 @@
             </div>
         </div>
 
-        <!-- 5. 図鑑（単語帳）画面 -->
-        <div id="screen-dictionary" class="screen" style="display: none;">
-            <div class="dict-header">
-                <h2>キャラクター図鑑 (単語帳)</h2>
-                <button id="btn-dict-back" class="close-btn">ホームに戻る</button>
-            </div>
-            <div class="dict-tab-box">
-                <button class="tab-btn active" data-tab="all">すべて</button>
-                <button class="tab-btn" data-tab="mastered">マスターのみ</button>
-                <button class="tab-btn" data-tab="favorite">お気に入り</button>
-            </div>
-            <div id="dict-list" class="dict-grid">
-                <!-- 動的に単語キャラが生成されます -->
-            </div>
-        </div>
-
-        <!-- 6. リザルト画面 -->
-        <div id="screen-result" class="screen" style="display: none;">
+        <!-- 8. リザルト画面 -->
+        <div id="screen-result" class="overlay-screen" style="display: none;">
             <h2 id="result-title">🎉 STAGE CLEAR !</h2>
             <div class="result-stats">
                 <p>獲得ゴールド: <span id="res-gold">50</span> G</p>
                 <p>獲得EP (学習ポイント): <span id="res-ep">15</span> EP</p>
-                <p>マスターした英単語（仲間になったキャラ）があるか確認しましょう！</p>
+                <p>マスターした英単語（仲間になったキャラ）があるか、図鑑で確認しましょう！</p>
             </div>
-            <button id="btn-result-to-home" class="primary-btn">ホームに戻る</button>
+            <button id="btn-result-to-home" class="primary-btn-pazd">ホームに戻る</button>
         </div>
+
+        <!-- パズドラ風：共通下部タブナビゲーション -->
+        <footer id="game-footer">
+            <button class="footer-tab active" data-target="tab-dungeon">
+                <span class="tab-icon">🏰</span>
+                <span class="tab-text">ダンジョン</span>
+            </button>
+            <button class="footer-tab" data-target="tab-dictionary">
+                <span class="tab-icon">📖</span>
+                <span class="tab-text">図鑑・単語帳</span>
+            </button>
+            <button class="footer-tab" data-target="tab-gacha">
+                <span class="tab-icon">🥚</span>
+                <span class="tab-text">ガチャ</span>
+            </button>
+            <button class="footer-tab" data-target="tab-others">
+                <span class="tab-icon">⚙️</span>
+                <span class="tab-text">その他</span>
+            </button>
+        </footer>
     </div>
 
-    <!-- 各種JavaScriptファイルのロード -->
+    <!-- JavaScriptロード -->
     <script src="js/state.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/game.js"></script>
