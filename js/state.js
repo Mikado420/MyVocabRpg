@@ -2,16 +2,14 @@ window.GameStateManager = {
     // マスター（デフォルト）データ
     wordDatabase: [],
     
-    // ユーザーセーブデータ構造
+    // ユーザーセーブデータ構造（デフォルト）
     saveData: {
         rank: 1,
         ep: 100,
-        // 各単語の学習ステータス記録
-        // [wordId]: { status: 'none'|'encountered'|'mastered', correct: 0, incorrect: 0, fav: false }
         words: {} 
     },
 
-    // ローカルデータのフォールバック（file:// 起動時のCORSエラー用）
+    // ローカルデータのフォールバック（CORS制限、またはJSON破損時の安全装置）
     fallbackData: {
         "chapter_1": {
             "section_1": [
@@ -99,9 +97,15 @@ window.GameStateManager = {
             const response = await fetch('data/words.json');
             if (!response.ok) throw new Error("Fetch failed");
             const data = await response.json();
-            this.wordDatabase = data.chapter_1.section_1;
+            
+            // 厳格なJSON構造チェック
+            if (data && data.chapter_1 && data.chapter_1.section_1) {
+                this.wordDatabase = data.chapter_1.section_1;
+            } else {
+                throw new Error("Invalid JSON structure");
+            }
         } catch (error) {
-            console.warn("CORS制限を検出。フォールバック用内部データを使用します:", error);
+            console.warn("words.json のロードに失敗したため、安全なフォールバックデータを使用します:", error);
             this.wordDatabase = this.fallbackData.chapter_1.section_1;
         }
         this.loadSaveData();
@@ -113,21 +117,34 @@ window.GameStateManager = {
             try {
                 this.saveData = JSON.parse(stored);
             } catch (e) {
-                console.error("セーブデータの破損を検知:", e);
+                console.error("セーブデータの破損を検知。データを初期化します:", e);
+                this.saveData = { rank: 1, ep: 100, words: {} };
             }
         }
         
+        // セーブデータの健全性保証（古いフォーマットからのマイグレーション）
+        if (!this.saveData || typeof this.saveData !== 'object') {
+            this.saveData = { rank: 1, ep: 100, words: {} };
+        }
+        if (!this.saveData.words || typeof this.saveData.words !== 'object') {
+            this.saveData.words = {};
+        }
+        if (typeof this.saveData.rank !== 'number') this.saveData.rank = 1;
+        if (typeof this.saveData.ep !== 'number') this.saveData.ep = 100;
+        
         // データベースの全単語に対する未踏ステートの補完
-        this.wordDatabase.forEach(word => {
-            if (!this.saveData.words[word.id]) {
-                this.saveData.words[word.id] = {
-                    status: 'none',
-                    correct_count: 0,
-                    incorrect_count: 0,
-                    is_favorite: false
-                };
-            }
-        });
+        if (this.wordDatabase && Array.isArray(this.wordDatabase)) {
+            this.wordDatabase.forEach(word => {
+                if (!this.saveData.words[word.id]) {
+                    this.saveData.words[word.id] = {
+                        status: 'none',
+                        correct_count: 0,
+                        incorrect_count: 0,
+                        is_favorite: false
+                    };
+                }
+            });
+        }
         this.save();
     },
 
@@ -135,7 +152,6 @@ window.GameStateManager = {
         localStorage.setItem('vocab_rpg_save', JSON.stringify(this.saveData));
     },
 
-    // 遭遇時の更新
     encounterWord(id) {
         if (this.saveData.words[id] && this.saveData.words[id].status === 'none') {
             this.saveData.words[id].status = 'encountered';
@@ -143,14 +159,12 @@ window.GameStateManager = {
         }
     },
 
-    // 正解・不正解時の記録
     recordResult(id, isCorrect) {
         const record = this.saveData.words[id];
         if (!record) return;
 
         if (isCorrect) {
             record.correct_count++;
-            // 遭遇状態からマスター（累計3回正解）への昇格
             if (record.status !== 'mastered' && record.correct_count >= 3) {
                 record.status = 'mastered';
                 alert(`🎉 単語「${this.getWordName(id)}」をマスターしました！仲間として編成に組み込めます！`);
