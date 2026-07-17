@@ -1,6 +1,5 @@
 window.GameUI = {
     init() {
-        // 安全なイベントリスナーの登録（ガード節の導入）
         const btnToDungeon = document.getElementById('btn-to-dungeon');
         if (btnToDungeon) btnToDungeon.addEventListener('click', () => window.GameController.startDungeon());
 
@@ -10,13 +9,11 @@ window.GameUI = {
         const btnReset = document.getElementById('btn-reset-data');
         if (btnReset) btnReset.addEventListener('click', () => this.resetGameData());
 
-        // フッターによる「パズドラ風」画面タブ切り替え
         const footerTabs = document.querySelectorAll('.footer-tab');
         footerTabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
                 footerTabs.forEach(t => t.classList.remove('active'));
                 
-                // 親要素（ボタン）のデータ属性を安全に取得
                 const activeTabBtn = e.currentTarget;
                 activeTabBtn.classList.add('active');
                 
@@ -25,7 +22,6 @@ window.GameUI = {
             });
         });
         
-        // 図鑑のサブタブ（すべて・マスター・お気に入り）切り替え
         const subTabs = document.querySelectorAll('.sub-tab-btn');
         subTabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -39,11 +35,9 @@ window.GameUI = {
     },
 
     switchTabScreen(screenId) {
-        // すべてのタブ画面を非表示に
         document.querySelectorAll('.tab-screen').forEach(screen => {
             screen.style.display = 'none';
         });
-        // ターゲット画面を表示
         const target = document.getElementById(screenId);
         if (target) {
             target.style.display = 'flex';
@@ -53,15 +47,16 @@ window.GameUI = {
         }
     },
 
+    // 修正箇所：showScreenを経由させることで最前面のオーバーレイを安全に非表示化
     showHome() {
         this.updateHeaderStats();
-        // フッタータブをリセットして「ダンジョン」に戻す
         const footerTabs = document.querySelectorAll('.footer-tab');
         footerTabs.forEach(t => t.classList.remove('active'));
         const dungeonTab = document.querySelector('[data-target="tab-dungeon"]');
         if (dungeonTab) dungeonTab.classList.add('active');
 
-        this.switchTabScreen('tab-dungeon');
+        // switchTabScreenではなく、最前面の overlay-screen を消去する showScreen を使用
+        this.showScreen('tab-dungeon');
     },
 
     updateHeaderStats() {
@@ -74,7 +69,6 @@ window.GameUI = {
         const goldEl = document.getElementById('gold-display');
         if (goldEl) goldEl.innerText = window.GameStateManager.saveData.gold;
 
-        // マスターした単語の割合をEXPバーに反映
         const expBar = document.getElementById('exp-bar');
         if (expBar) {
             const expPercent = window.GameStateManager.calculateExpProgress();
@@ -183,7 +177,6 @@ window.GameUI = {
         }
     },
 
-    // ガチャシミュレータ処理（EPを消費して遭遇状態にする）
     pullGacha() {
         const save = window.GameStateManager.saveData;
         if (save.ep < 15) {
@@ -194,7 +187,6 @@ window.GameUI = {
         save.ep -= 15;
         this.updateHeaderStats();
 
-        // まだ完全解放されていない単語をランダムに1語選別して解放
         const db = window.GameStateManager.wordDatabase;
         const unmastered = db.filter(w => save.words[w.id].status !== 'mastered');
         
@@ -210,9 +202,8 @@ window.GameUI = {
         const prize = unmastered[Math.floor(Math.random() * unmastered.length)];
         const wordState = save.words[prize.id];
         
-        // 遭遇 ➔ 正解した状態にブーストをかける
         wordState.status = 'encountered';
-        wordState.correct_count += 1; // マスター化への近道ボーナス
+        wordState.correct_count += 1;
         window.GameStateManager.save();
 
         resultBox.innerHTML = `
