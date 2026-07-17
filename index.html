@@ -16,8 +16,8 @@
                 <span class="player-name">受験戦士</span>
             </div>
             <div class="exp-box">
-                <div class="exp-label">EXP (単語定着度)</div>
-                <div class="bar-container"><div id="exp-bar" class="bar-fill exp-fill" style="width: 15%;"></div></div>
+                <div class="exp-label">EXP (単語マスター率)</div>
+                <div class="bar-container"><div id="exp-bar" class="bar-fill exp-fill" style="width: 0%;"></div></div>
             </div>
             <div class="currency-box">
                 <div class="currency-item"><span class="icon-gem">💎</span><span id="ep-display">100</span></div>
@@ -27,34 +27,40 @@
 
         <!-- 1画面完結：伸縮するメインコンテンツ領域 -->
         <main id="game-main">
-            <!-- ダンジョン（ホーム）タブ -->
+            <!-- 1. ダンジョン（ホーム）タブ -->
             <div id="tab-dungeon" class="tab-screen">
                 <div class="banner-area">
-                    <h2>Chapter 1：基礎の森</h2>
-                    <p>大学入学共通テスト基礎レベル</p>
+                    <h2>ダンジョン選択</h2>
+                    <p>シス単の章に沿ってバトルに挑みます</p>
                 </div>
                 <div class="stone-menu">
-                    <button id="btn-to-dungeon" class="stone-btn btn-fire">第1章：Section 1 (1〜100) に挑戦</button>
-                    <button class="stone-btn btn-locked">第2章：Section 2 (101〜200) [未解放]</button>
-                    <button class="stone-btn btn-locked">第3章：Section 3 (201〜300) [未解放]</button>
+                    <button class="stone-btn btn-fire start-dungeon-btn" data-chap="1">第1章：基礎の森 (Basic) に挑戦</button>
+                    <button class="stone-btn btn-fire start-dungeon-btn" data-chap="2">第2章：必修の荒野 (Essential) に挑戦</button>
+                    <button class="stone-btn btn-locked">第3章：実力の塔 (Advanced) [未解放]</button>
                 </div>
             </div>
 
-            <!-- 図鑑（単語帳）タブ -->
+            <!-- 2. 図鑑（単語帳）タブ -->
             <div id="tab-dictionary" class="tab-screen" style="display: none;">
                 <div class="dict-control">
-                    <h3>キャラクター図鑑 (単語帳)</h3>
+                    <div class="dict-title-row">
+                        <h3>単語図鑑</h3>
+                        <!-- 新規追加：チャプターオンデマンド切り替え用UI -->
+                        <select id="dict-chapter-select" class="pazd-select">
+                            <option value="1">第1章 (基礎)</option>
+                            <option value="2">第2章 (必修)</option>
+                        </select>
+                    </div>
                     <div class="dict-tab-box">
                         <button class="sub-tab-btn active" data-tab="all">すべて</button>
                         <button class="sub-tab-btn" data-tab="mastered">マスター</button>
                         <button class="sub-tab-btn" data-tab="favorite">お気に入り</button>
                     </div>
                 </div>
-                <!-- 枠内独立スクロール領域 -->
                 <div id="dict-list" class="dict-grid"></div>
             </div>
 
-            <!-- 単語ガチャタブ -->
+            <!-- 3. 単語ガチャタブ -->
             <div id="tab-gacha" class="tab-screen" style="display: none;">
                 <div class="gacha-container">
                     <div class="gacha-dragon">🐲</div>
@@ -65,14 +71,14 @@
                 </div>
             </div>
 
-            <!-- その他タブ -->
+            <!-- 4. その他タブ -->
             <div id="tab-others" class="tab-screen" style="display: none;">
                 <div class="others-container">
                     <h3>その他メニュー</h3>
                     <div class="stone-menu">
                         <button id="btn-reset-data" class="stone-btn btn-danger">セーブデータをリセット</button>
                         <div class="credits">
-                            <p>英単語クイズRPG v2.2</p>
+                            <p>英単語クイズRPG v2.5</p>
                             <p>GitHub共同開発用設計モデル</p>
                         </div>
                     </div>
@@ -84,7 +90,6 @@
         <div id="screen-scan" class="overlay-screen" style="display: none;">
             <div class="header-banner">⚠️ ENEMY DETECTED ⚠️</div>
             <p class="section-desc">このバトルの敵の弱点（出題される英単語）を検知しました。頭に叩き込んでください！</p>
-            <!-- 枠内独立スクロール領域 -->
             <div id="scan-list"></div>
             <button id="btn-start-battle" class="primary-btn-pazd">解析完了！バトル開始</button>
         </div>
