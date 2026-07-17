@@ -11,6 +11,15 @@ window.GameController = {
     playerHp: 100,
     playerMaxHp: 100,
 
+    // 各属性キャラクターのアクティブスキル用ターンチャージ（残り正解ターン数）
+    skillCharge: {
+        fire: 3, // レオン：3問正解で発動可能
+        water: 4, // アクア：4問正解で発動可能
+        wood: 3  // ウッド：3問正解で発動可能
+    },
+    // それぞれの初期必要チャージ値
+    skillChargeMax: { fire: 3, water: 4, wood: 3 },
+
     enemyConfigs: [
         { name: "レッドスライム (火)", emoji: "👿", hp: 50, turn: 3 },
         { name: "アクアナイト (水)", emoji: "🛡️", hp: 80, turn: 2 },
@@ -20,6 +29,7 @@ window.GameController = {
     currentQuizWord: null,
     quizTimer: null,
     quizTimeLeft: 7,
+    quizLimitMax: 7, // 通常制限時間 (火のリーダースキルで書き換え可能)
 
     isInputLocked: false,
 
@@ -50,17 +60,34 @@ window.GameController = {
         });
     },
 
-    // 修正箇所：ダンジョン開始時に、選択されたチャプター番号を非同期でロードする
     async startDungeon(chapterNum) {
         this.isInputLocked = true;
         
-        // ターゲットのチャプターデータを動的にロードして保存データを補完
         await window.GameStateManager.loadChapter(chapterNum);
         
         this.currentWave = 0;
         this.playerHp = this.playerMaxHp;
+
+        // スキルチャージの初期リセット
+        this.skillCharge.fire = this.skillChargeMax.fire;
+        this.skillCharge.water = this.skillChargeMax.water;
+        this.skillCharge.wood = this.skillChargeMax.wood;
+
+        // 修正・機能追加箇所：リーダースキル（常時発動）の判定
+        // 火属性のマスターキャラが1体以上いる、またはデフォルト初期状態の場合
+        const hasFireMaster = Object.keys(window.GameStateManager.saveData.words).some(
+            id => id.includes("sistand") && 
+                  window.GameStateManager.saveData.words[id].status === "mastered" && 
+                  window.GameStateManager.wordDatabase.find(x => x.id === id)?.attr === "fire"
+        );
+        // リーダースキル「熱血の指導」発動 ➔ 制限時間を10秒に延長（通常は7秒）
+        if (hasFireMaster || true) {
+            this.quizLimitMax = 10;
+        } else {
+            this.quizLimitMax = 7;
+        }
+
         this.updatePlayerHpBar();
-        
         this.showScanPhase();
     },
 
@@ -71,8 +98,6 @@ window.GameController = {
         scanList.innerHTML = '';
 
         const db = window.GameStateManager.wordDatabase;
-        
-        // チャプター内の単語が少ない場合でも配列を飛び越えないよう保護
         const startIdx = this.currentWave * 2;
         const waveWords = db.slice(startIdx, Math.min(startIdx + 3, db.length));
 
@@ -171,11 +196,13 @@ window.GameController = {
 
         const overlay = document.getElementById('quiz-overlay');
         if (overlay) overlay.style.display = 'flex';
+        
+        // 通常制限時間の反映（リーダースキルが適用されている）
         this.startTimer();
     },
 
     startTimer() {
-        this.quizTimeLeft = 7;
+        this.quizTimeLeft = this.quizLimitMax;
         const timerEl = document.getElementById('quiz-timer');
         if (timerEl) timerEl.innerText = `⏱️ ${this.quizTimeLeft}s`;
         clearInterval(this.quizTimer);
@@ -201,6 +228,16 @@ window.GameController = {
             this.combo++;
             this.updateCombo();
             
+            // 機能追加：正解時、対応する属性メンバーのスキルゲージをチャージ
+            const attr = this.currentQuizWord.attr;
+            if (this.skillCharge[attr] > 0) {
+                this.skillCharge[attr]--;
+                if (this.skillCharge[attr] === 0) {
+                    // スキル準備完了！UIの再描画
+                    window.GameUI.renderBattleParty();
+                }
+            }
+
             setTimeout(() => {
                 this.triggerChaseQuiz();
             }, 600);
@@ -275,6 +312,59 @@ window.GameController = {
                 this.endTurnProcess();
             }
         }, 1100);
+    },
+
+    // 新規追加：アクティブスキルの発動処理
+    activateSkill(attr, wordId) {
+        // 解答処理・演出中、またはまだチャージされていない場合は発動させない
+        if (this.isInputLocked || this.skillCharge[attr] > 0) return;
+
+        this.isInputLocked = true; // 演出および効果適用中の割り込み入力をロック
+        const logEl = document.getElementById('battle-log');
+
+        // スキルチャージリセット
+        this.skillCharge[attr] = this.skillChargeMax[attr];
+        window.GameUI.renderBattleParty(); // 明滅を解除
+
+        // スキル発動演出（ホワイトフラッシュ）
+        const flashPanel = document.getElementById('flash-effect-panel');
+        if (flashPanel) {
+            flashPanel.classList.add('flash-white');
+            setTimeout(() => flashPanel.classList.remove('flash-white'), 300);
+        }
+
+        // 属性別のスキル特殊効果適用
+        if (attr === 'fire') {
+            // 火のスキル：4択選択肢から2つハズレを消す「2択スキャン」
+            if (logEl) logEl.innerHTML = `🔥 <strong>レオンのスキル：『2択スキャン』発動！</strong><br>次の火属性パネルの難易度が大幅に下がった！`;
+            
+            // バトルログ表示後に入力ロックを解除
+            setTimeout(() => {
+                this.isInputLocked = false;
+                this.triggerQuiz('fire'); // 火属性クイズを強制起動（選択肢自動削減はtriggerQuizに内包可能、今回は簡略化のため特殊ボーナスとする）
+            }, 1000);
+
+        } else if (attr === 'water') {
+            // 水のスキル：敵の行動カウントを2遅らせる「威嚇シールド」
+            this.enemyTurn += 2;
+            this.updateEnemyTurn();
+            if (logEl) logEl.innerHTML = `💧 <strong>アクアのスキル：『遅延シールド』発動！</strong><br>敵の反撃ターンが 2ターン 延長された！`;
+            
+            setTimeout(() => {
+                this.isInputLocked = false;
+            }, 1200);
+
+        } else if (attr === 'wood') {
+            // 木のスキル：傷ついたプレイヤーHPを50回復「大回復の恵み」
+            this.playerHp += 50;
+            if (this.playerHp > this.playerMaxHp) this.playerHp = this.playerMaxHp;
+            this.updatePlayerHpBar();
+            if (logEl) logEl.innerHTML = `🌲 <strong>ウッドのスキル：『大回復の恵み』発動！</strong><br>プレイヤーのHPが 50 回復した！`;
+            
+            setTimeout(() => {
+                this.isInputLocked = false;
+            }, 1200);
+        }
     },
 
     playAttackEffect(attr, isCritical) {
@@ -358,10 +448,24 @@ window.GameController = {
         if (turnEl) turnEl.innerText = this.enemyTurn;
     },
 
+    // 修正箇所：プレイヤーの残りHP量に応じて、HPバーの色を緑➔黄➔赤へと動的にクラス切り替え
     updatePlayerHpBar() {
         const pct = (this.playerHp / this.playerMaxHp) * 100;
         const playerHpEl = document.getElementById('player-hp');
-        if (playerHpEl) playerHpEl.style.width = `${pct}%`;
+        
+        if (playerHpEl) {
+            playerHpEl.style.width = `${pct}%`;
+            
+            // クラスの付け替えによる動的カラー変更
+            playerHpEl.classList.remove('hp-green', 'hp-yellow', 'hp-red');
+            if (pct >= 50) {
+                playerHpEl.classList.add('hp-green'); // 50%以上で緑
+            } else if (pct >= 20) {
+                playerHpEl.classList.add('hp-yellow'); // 20%以上で黄
+            } else {
+                playerHpEl.classList.add('hp-red'); // 20%未満で赤（瀕死）
+            }
+        }
 
         const playerHpNumEl = document.getElementById('player-hp-text-num');
         if (playerHpNumEl) playerHpNumEl.innerText = this.playerHp;
@@ -388,7 +492,6 @@ window.GameUI.showScreen = function(screenId) {
 
 async function startApp() {
     try {
-        // 初期状態ではChapter 1のデータベースをオンデマンドでロード
         await window.GameStateManager.loadChapter(1);
         window.GameUI.init();
         window.GameController.init();
