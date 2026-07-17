@@ -47,7 +47,6 @@ window.GameUI = {
         }
     },
 
-    // 修正箇所：showScreenを経由させることで最前面のオーバーレイを安全に非表示化
     showHome() {
         this.updateHeaderStats();
         const footerTabs = document.querySelectorAll('.footer-tab');
@@ -55,7 +54,6 @@ window.GameUI = {
         const dungeonTab = document.querySelector('[data-target="tab-dungeon"]');
         if (dungeonTab) dungeonTab.classList.add('active');
 
-        // switchTabScreenではなく、最前面の overlay-screen を消去する showScreen を使用
         this.showScreen('tab-dungeon');
     },
 
