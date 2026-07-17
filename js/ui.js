@@ -1,16 +1,14 @@
 window.GameUI = {
     init() {
-        // ナビゲーション処理
         document.getElementById('btn-to-dictionary').addEventListener('click', () => this.showDictionary());
         document.getElementById('btn-dict-back').addEventListener('click', () => this.showHome());
         
-        // 図鑑のタブ切り替え
         const tabs = document.querySelectorAll('.tab-btn');
         tabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
                 tabs.forEach(t => t.classList.remove('active'));
-                e.target.classList.add('active');
-                this.renderDictionary(e.target.dataset.tab);
+                e.currentTarget.classList.add('active'); // e.currentTargetに変更
+                this.renderDictionary(e.currentTarget.dataset.tab);
             });
         });
 
@@ -19,8 +17,7 @@ window.GameUI = {
 
     showHome() {
         this.updateHomeStats();
-        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-        document.getElementById('screen-home').style.display = 'flex';
+        this.showScreen('screen-home');
     },
 
     updateHomeStats() {
@@ -30,11 +27,9 @@ window.GameUI = {
 
     showDictionary() {
         this.renderDictionary('all');
-        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-        document.getElementById('screen-dictionary').style.display = 'flex';
+        this.showScreen('screen-dictionary');
     },
 
-    // 段階的解放を厳密に処理した図鑑のレンダリング
     renderDictionary(filterType = 'all') {
         const listContainer = document.getElementById('dict-list');
         listContainer.innerHTML = '';
@@ -45,14 +40,12 @@ window.GameUI = {
         db.forEach(word => {
             const progress = saveState[word.id] || { status: 'none', correct_count: 0, incorrect_count: 0, is_favorite: false };
 
-            // フィルター判定
             if (filterType === 'mastered' && progress.status !== 'mastered') return;
             if (filterType === 'favorite' && !progress.is_favorite) return;
 
             const card = document.createElement('div');
             card.className = `dict-card state-${progress.status} attr-${word.attr}`;
             
-            // Web Speech APIによる発音再生（遭遇またはマスター時のみ再生可能）
             const isClickableVoice = progress.status !== 'none';
             const voiceIcon = isClickableVoice ? '🔊' : '🔒';
 
@@ -100,6 +93,8 @@ window.GameUI = {
 
     speakWord(word) {
         if ('speechSynthesis' in window) {
+            // 前の発音をキャンセルして連打時のお詰まりを防止
+            window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(word);
             utterance.lang = 'en-US';
             window.speechSynthesis.speak(utterance);
@@ -108,7 +103,6 @@ window.GameUI = {
         }
     },
 
-    // マスターされたキャラだけをバトルパーティにレンダリングする
     renderBattleParty() {
         const partyContainer = document.getElementById('battle-party');
         partyContainer.innerHTML = '';
@@ -128,7 +122,6 @@ window.GameUI = {
             }
         });
 
-        // 誰もマスターしていない場合のフォールバック（初期仕様：仮の学習妖精を設置）
         if (renderedCount === 0) {
             partyContainer.innerHTML = `
                 <div class="party-member char-fire">火妖精</div>
