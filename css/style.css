@@ -28,7 +28,7 @@ body {
     overflow: hidden;
 }
 
-/* 上部ステータスヘッダー */
+/* 上部ヘッダー */
 #game-header {
     background: linear-gradient(180deg, #423830, #201813);
     border-bottom: 2px solid #5a4b41;
@@ -68,7 +68,7 @@ body {
 }
 .currency-item { display: flex; align-items: center; gap: 3px; }
 
-/* 伸縮するメイン表示領域 */
+/* メイン表示領域 */
 #game-main {
     flex-grow: 1;
     overflow: hidden;
@@ -78,7 +78,6 @@ body {
     flex-direction: column;
 }
 
-/* 各タブ画面 */
 .tab-screen { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
 
 /* ダンジョン選択 */
@@ -226,8 +225,34 @@ body {
 #enemy-turn::before { content: "あと "; font-size: 9px; color: #e74c3c; }
 
 .enemy-hp-text { font-size: 10px; color: #bdc3c7; font-weight: bold; margin-top: 3px; text-shadow: 1px 1px 1px #000; }
-.enemy-hp-container { width: 80%; background-color: #222; height: 7px; }
-.enemy-hp-fill { background: linear-gradient(90deg, #c0392b, #e74c3c); }
+
+/* ====================
+   修正箇所：3D発光立体HPバー
+   ==================== */
+.hp-bar-container {
+    width: 80%;
+    height: 12px; /* 太くして視認性を最大化 */
+    background-color: #1a1512;
+    border: 1px solid #4a3429;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+    position: relative;
+}
+.hp-bar {
+    height: 100%;
+    width: 100%;
+    transition: width 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: inset 0 2px 3px rgba(255,255,255,0.45); /* 内側白発光で立体感 */
+}
+/* 敵専用のHPバーカラー */
+.enemy-hp-fill {
+    background: linear-gradient(180deg, #ec7063, #cb4335);
+}
+/* プレイヤー専用の動的カラーチェンジ */
+.hp-green { background: linear-gradient(180deg, #58d68d, #27ae60); }
+.hp-yellow { background: linear-gradient(180deg, #f4d03f, #d4ac0d); }
+.hp-red { background: linear-gradient(180deg, #f1948a, #c0392b); }
 
 /* ドロップ突撃 */
 .attack-particle {
@@ -252,6 +277,7 @@ body {
 
 /* プレイヤーエリア */
 .player-area { background-color: #261d18; border: 1px solid #5a4b41; padding: 6px; border-radius: 8px; flex-shrink: 0; }
+.skill-guide-text { font-size: 8px; color: #888; text-align: center; margin-bottom: 2px; }
 .party-list { display: flex; justify-content: space-around; margin-bottom: 4px; height: 32px; }
 .party-member {
     width: 30px;
@@ -263,13 +289,22 @@ body {
     font-size: 9px;
     font-weight: bold;
     border: 1px solid #555;
+    cursor: pointer;
 }
 .char-fire { background-color: #c0392b; color: white; border-color: #e74c3c; }
 .char-water { background-color: #2980b9; color: white; border-color: #3498db; }
 .char-wood { background-color: #27ae60; color: white; border-color: #2ecc71; }
 
-.player-hp-box { background-color: #111; width: 100%; height: 7px; }
-.player-hp-fill { background: linear-gradient(90deg, #2ecc71, #27ae60); }
+/* パズドラ風：スキルチャージ完了時の明滅アニメーション */
+.skill-ready {
+    border: 2px solid #f1c40f !important;
+    animation: skillBlink 1.2s infinite;
+}
+@keyframes skillBlink {
+    0%, 100% { filter: brightness(1.0) drop-shadow(0 0 1px #f1c40f); }
+    50% { filter: brightness(1.6) drop-shadow(0 0 5px #f1c40f); }
+}
+
 .player-hp-text { font-size: 9px; text-align: right; margin-top: 1px; color: #bdc3c7; font-weight: bold; }
 
 #battle-log { min-height: 32px; font-size: 11px; color: #ddd; text-align: center; padding: 4px; background: #000; border-radius: 4px; border: 1px solid #444; flex-shrink: 0; }
@@ -304,14 +339,12 @@ body {
 #chase-phrase { font-size: 15px; color: #fff; margin-bottom: 2px; }
 #chase-phrase-jp { font-size: 10px; color: #95a5a6; margin-bottom: 10px; }
 
-/* ====================
-   図鑑（単語帳）UI
-   ==================== */
+/* 図鑑 UI */
 .dict-control { border-bottom: 1px solid #5a4b41; padding-bottom: 6px; flex-shrink: 0; }
 .dict-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
 .dict-control h3 { font-size: 14px; color: #f1c40f; }
 
-/* 新規追加：パズドラ風セレクトボックス */
+/* パズドラ風セレクトボックス */
 .pazd-select {
     background-color: #110d0a;
     border: 1px solid #b38f43;
@@ -337,7 +370,7 @@ body {
     padding: 8px 0;
 }
 
-/* カード解放ステータス */
+/* カード解放 */
 .dict-card { background: #231c17; border-radius: 6px; padding: 6px; display: flex; flex-direction: column; align-items: center; position: relative; border: 1px solid #4a3429; }
 .dict-card.state-none { opacity: 0.4; }
 .dict-card.state-none .card-sprite { filter: brightness(0); }
@@ -357,7 +390,7 @@ body {
 .card-word { font-weight: bold; font-size: 13px; color: #fff; }
 .card-meaning { font-size: 10px; color: #bdc3c7; text-align: center; }
 .card-stats { font-size: 9px; color: #7f8c8d; margin-top: 2px; }
-.fav-btn { position: absolute; top: 4px; right: 4px; background: none; border: none; font-size: 12px; cursor: pointer; color: #444; }
+.fav-btn { position: absolute; top: 4px; right: 4px; background: none; border: none; font-size: 14px; cursor: pointer; color: #444; }
 .fav-btn.active { color: #f1c40f; }
 .card-detail { font-size: 9px; color: #aaa; width: 100%; margin-top: 4px; padding-top: 4px; border-top: 1px solid #3d2f26; }
 
@@ -368,21 +401,13 @@ body {
 .gacha-result-box { margin-top: 12px; padding: 12px; background-color: #1a221d; border: 1px solid #27ae60; border-radius: 8px; width: 85%; animation: popIn 0.3s ease-out; }
 @keyframes gachaBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
-/* その他メニュー */
+/* その他 */
 .others-container { display: flex; flex-direction: column; gap: 12px; }
 .others-container h3 { color: #f1c40f; font-size: 14px; margin-bottom: 6px; }
 .credits { text-align: center; color: #777; font-size: 10px; margin-top: 30px; line-height: 1.5; }
 
-/* 下部タブバー（完全固定） */
-#game-footer {
-    height: 50px;
-    background: linear-gradient(180deg, #3d3128, #1c1511);
-    border-top: 2px solid #5a4b41;
-    display: flex;
-    justify-content: space-around;
-    z-index: 10;
-    flex-shrink: 0;
-}
+/* 下部タブバー（固定） */
+#game-footer { height: 50px; background: linear-gradient(180deg, #3d3128, #1c1511); border-top: 2px solid #5a4b41; display: flex; justify-content: space-around; z-index: 10; flex-shrink: 0; }
 .footer-tab { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #8c7b72; transition: color 0.2s; }
 .footer-tab.active { color: #f1c40f; background: rgba(241, 196, 15, 0.05); border-top: 2px solid #f1c40f; margin-top: -2px; }
 .tab-icon { font-size: 16px; }
