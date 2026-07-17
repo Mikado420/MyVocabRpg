@@ -1,6 +1,5 @@
 window.GameUI = {
     init() {
-        // 各種ダンジョン挑戦ボタンへの非同期ロードバインド
         const dungeonBtns = document.querySelectorAll('.start-dungeon-btn');
         dungeonBtns.forEach(btn => {
             btn.addEventListener('click', async (e) => {
@@ -15,13 +14,11 @@ window.GameUI = {
         const btnReset = document.getElementById('btn-reset-data');
         if (btnReset) btnReset.addEventListener('click', () => this.resetGameData());
 
-        // 新規追加：図鑑画面のチャプター選択時に動的JSONロードを行って図鑑を更新する
         const dictChapSelect = document.getElementById('dict-chapter-select');
         if (dictChapSelect) {
             dictChapSelect.addEventListener('change', async (e) => {
                 const selectedChap = parseInt(e.target.value);
                 await window.GameStateManager.loadChapter(selectedChap);
-                // アクティブなサブタブに準拠して図鑑を再描画
                 const activeSubTab = document.querySelector('.sub-tab-btn.active');
                 const filter = activeSubTab ? activeSubTab.dataset.tab : 'all';
                 this.renderDictionary(filter);
@@ -62,9 +59,6 @@ window.GameUI = {
         if (target) {
             target.style.display = 'flex';
             if (screenId === 'tab-dictionary') {
-                const selectEl = document.getElementById('dict-chapter-select');
-                const currentChap = selectEl ? parseInt(selectEl.value) : 1;
-                // 現在選択されているチャプターに基づき描画
                 this.renderDictionary('all');
             }
         }
@@ -169,6 +163,7 @@ window.GameUI = {
         }
     },
 
+    // 修正・機能追加箇所：バトル中の味方キャラクター編成表示、およびスキル発動可能時に明滅クラスを付与
     renderBattleParty() {
         const partyContainer = document.getElementById('battle-party');
         if (!partyContainer) return;
@@ -176,25 +171,51 @@ window.GameUI = {
 
         const db = window.GameStateManager.wordDatabase;
         const saveState = window.GameStateManager.saveData.words;
+        const skillTracker = window.GameController.skillCharge; // バトルマネージャー側のスキルチャージ情報を参照
 
         let renderedCount = 0;
         db.forEach(word => {
             const progress = saveState[word.id];
             if (progress && progress.status === 'mastered') {
                 const member = document.createElement('div');
-                member.className = `party-member char-${word.attr}`;
+                
+                // チャージ数が溜まりきっている場合（0以下）に明滅アニメーションクラスを付与
+                const currentCharge = skillTracker[word.attr] || 0;
+                const isReady = currentCharge <= 0;
+                
+                member.className = `party-member char-${word.attr} ${isReady ? 'skill-ready' : ''}`;
                 member.innerText = word.word.substring(0, 3).toUpperCase();
+                member.dataset.wordId = word.id;
+                member.dataset.attr = word.attr;
+
+                // 明滅キャラタップでアクティブスキルを発動
+                member.addEventListener('click', (e) => {
+                    const attr = e.currentTarget.dataset.attr;
+                    const wordId = e.currentTarget.dataset.wordId;
+                    window.GameController.activateSkill(attr, wordId);
+                });
+
                 partyContainer.appendChild(member);
                 renderedCount++;
             }
         });
 
+        // 誰も解放していない場合の仮のスキル妖精
         if (renderedCount === 0) {
-            partyContainer.innerHTML = `
-                <div class="party-member char-fire">火妖</div>
-                <div class="party-member char-water">水妖</div>
-                <div class="party-member char-wood">木妖</div>
-            `;
+            const types = ['fire', 'water', 'wood'];
+            types.forEach(type => {
+                const member = document.createElement('div');
+                const isReady = (skillTracker[type] || 0) <= 0;
+                member.className = `party-member char-${type} ${isReady ? 'skill-ready' : ''}`;
+                member.innerText = type === 'fire' ? '火妖' : type === 'water' ? '水妖' : '木妖';
+                member.dataset.attr = type;
+                member.dataset.wordId = `fairy_${type}`;
+                
+                member.addEventListener('click', (e) => {
+                    window.GameController.activateSkill(e.currentTarget.dataset.attr, e.currentTarget.dataset.wordId);
+                });
+                partyContainer.appendChild(member);
+            });
         }
     },
 
