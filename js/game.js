@@ -22,29 +22,16 @@ window.GameController = {
     quizTimeLeft: 7,
 
     init() {
-        // ガード節を設けた安全なイベントリスナー登録
-        const btnToDungeon = document.getElementById('btn-to-dungeon');
-        if (btnToDungeon) {
-            btnToDungeon.addEventListener('click', () => this.startDungeon());
-        } else {
-            console.warn("警告: btn-to-dungeon が見つかりません");
-        }
-
         const btnStartBattle = document.getElementById('btn-start-battle');
         if (btnStartBattle) {
             btnStartBattle.addEventListener('click', () => this.startBattlePhase());
-        } else {
-            console.warn("警告: btn-start-battle が見つかりません");
         }
 
         const btnResToHome = document.getElementById('btn-result-to-home');
         if (btnResToHome) {
             btnResToHome.addEventListener('click', () => window.GameUI.showHome());
-        } else {
-            console.warn("警告: btn-result-to-home が見つかりません");
         }
 
-        // 属性パネルの安全なイベント登録
         const panels = document.querySelectorAll('.panel-btn');
         panels.forEach(panel => {
             panel.addEventListener('click', (e) => {
@@ -93,6 +80,7 @@ window.GameController = {
             scanList.appendChild(card);
         });
 
+        // スキャン画面オーバーレイを表示
         window.GameUI.showScreen('screen-scan');
     },
 
@@ -293,6 +281,7 @@ window.GameController = {
             if (logEl) logEl.innerText = "敵を討伐！次のエネミーの弱点を解析します。";
             setTimeout(() => this.showScanPhase(), 1200);
         } else {
+            // リザルト画面
             window.GameUI.showScreen('screen-result');
         }
     },
@@ -305,7 +294,7 @@ window.GameController = {
 
     updateEnemyTurn() {
         const turnEl = document.getElementById('enemy-turn');
-        if (turnEl) turnEl.innerText = `あと ${this.enemyTurn} ターン`;
+        if (turnEl) turnEl.innerText = this.enemyTurn; // パズドラ同様「あと ○」のテキストはCSSで付与
     },
 
     updatePlayerHpBar() {
@@ -324,12 +313,18 @@ window.GameController = {
 };
 
 window.GameUI.showScreen = function(screenId) {
-    document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-    const target = document.getElementById(screenId);
-    if (target) {
-        target.style.display = 'flex';
+    // スキャン、バトル、リザルトはフルスクリーンのオーバーレイとして処理
+    const overlays = ['screen-scan', 'screen-battle', 'screen-result'];
+    
+    if (overlays.includes(screenId)) {
+        // オーバーレイ画面を表示
+        document.querySelectorAll('.overlay-screen').forEach(s => s.style.display = 'none');
+        const target = document.getElementById(screenId);
+        if (target) target.style.display = 'flex';
     } else {
-        console.error(`Screen ID not found: ${screenId}`);
+        // 通常のタブ画面を切り替え
+        document.querySelectorAll('.overlay-screen').forEach(s => s.style.display = 'none');
+        window.GameUI.switchTabScreen(screenId);
     }
 };
 
