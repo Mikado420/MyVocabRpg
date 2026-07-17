@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英単語クイズRPG</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div id="game-window">
+        <!-- 1. ホーム画面 (タイトル & ダンジョン選択) -->
+        <div id="screen-home" class="screen">
+            <h1 class="title">英単語クイズRPG</h1>
+            <p class="subtitle">〜 知識を剣にして戦え 〜</p>
+            <div class="user-stats">
+                <span>Rank: 1</span> | <span>EP: <span id="ep-display">100</span></span>
+            </div>
+            <button id="btn-start-dungeon" class="menu-btn">ダンジョン「基礎の森」に挑戦</button>
+        </div>
+
+        <!-- 2. エネミー・スキャン画面 (インプットフェーズ) -->
+        <div id="screen-scan" class="screen" style="display: none;">
+            <div class="scan-header">
+                <span class="scan-alert">⚠️ ENEMY DETECTED ⚠️</span>
+                <h2>エネミー・スキャン (弱点解析)</h2>
+            </div>
+            <p class="scan-desc">このバトルの敵が苦手とする英単語を解析しました。直後のバトルで出題されます。よく頭に叩き込んでください！</p>
+            <div id="scan-list">
+                <!-- ここに動的に単語情報が追加されます -->
+            </div>
+            <button id="btn-start-battle" class="primary-btn">解析完了！バトル開始</button>
+        </div>
+
+        <!-- 3. バトル画面 (アウトプットフェーズ) -->
+        <div id="screen-battle" class="screen" style="display: none;">
+            <div class="stage-header">
+                <span id="stage-name">基礎の森 (WAVE 1/3)</span>
+                <span id="combo-display">0 COMBO</span>
+            </div>
+
+            <!-- 敵表示エリア -->
+            <div class="enemy-container">
+                <div id="enemy-sprite">😈</div>
+                <div id="enemy-name">スライム</div>
+                <div class="hp-bar-container">
+                    <div id="enemy-hp" class="hp-bar" style="width: 100%;"></div>
+                </div>
+                <div id="enemy-turn">あと 3 ターン</div>
+            </div>
+
+            <!-- プレイヤー/チームエリア -->
+            <div class="player-container">
+                <div class="party-list">
+                    <div class="party-member char-fire">火</div>
+                    <div class="party-member char-water">水</div>
+                    <div class="party-member char-wood">木</div>
+                </div>
+                <div class="hp-bar-container player-hp-box">
+                    <div id="player-hp" class="hp-bar player-hp-fill" style="width: 100%;"></div>
+                </div>
+                <div class="player-hp-text">PLAYER HP: <span id="player-hp-text-num">100</span>/100</div>
+            </div>
+
+            <!-- ログパネル -->
+            <div id="battle-log">攻撃する属性のパネルを選択してください！</div>
+
+            <!-- クイズパネル（パズル盤面の代わり） -->
+            <div class="panel-box" id="attr-panels">
+                <button class="panel-btn panel-fire" data-attr="fire">火 (動詞)</button>
+                <button class="panel-btn panel-water" data-attr="water">水 (名詞)</button>
+                <button class="panel-btn panel-wood" data-attr="wood">木 (形容詞)</button>
+            </div>
+        </div>
+
+        <!-- 4. クイズオーバーレイ (4択表示) -->
+        <div id="quiz-overlay" style="display: none;">
+            <div class="quiz-box">
+                <div id="quiz-timer">⏱️ 7s</div>
+                <div id="quiz-genre">属性: FIRE</div>
+                <h3 id="quiz-word">abandon</h3>
+                <div id="quiz-choices">
+                    <!-- ボタンが動的に生成されます -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. リザルト画面 -->
+        <div id="screen-result" class="screen" style="display: none;">
+            <h2 id="result-title">🎉 STAGE CLEAR !</h2>
+            <div class="result-stats">
+                <p>獲得ゴールド: <span id="res-gold">50</span> G</p>
+                <p>獲得EP (学習ポイント): <span id="res-ep">15</span> EP</p>
+                <p>ドロップ報酬: <span id="res-drop">火のタマゴ</span></p>
+            </div>
+            <button id="btn-return-home" class="menu-btn">ホームに戻る</button>
+        </div>
+    </div>
+
+    <script src="js/game.js"></script>
+</body>
+</html>
