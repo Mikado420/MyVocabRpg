@@ -1,13 +1,33 @@
 window.GameUI = {
     init() {
-        const btnToDungeon = document.getElementById('btn-to-dungeon');
-        if (btnToDungeon) btnToDungeon.addEventListener('click', () => window.GameController.startDungeon());
+        // 各種ダンジョン挑戦ボタンへの非同期ロードバインド
+        const dungeonBtns = document.querySelectorAll('.start-dungeon-btn');
+        dungeonBtns.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const chap = parseInt(e.currentTarget.dataset.chap);
+                await window.GameController.startDungeon(chap);
+            });
+        });
 
         const btnGacha = document.getElementById('btn-gacha-pull');
         if (btnGacha) btnGacha.addEventListener('click', () => this.pullGacha());
 
         const btnReset = document.getElementById('btn-reset-data');
         if (btnReset) btnReset.addEventListener('click', () => this.resetGameData());
+
+        // 新規追加：図鑑画面のチャプター選択時に動的JSONロードを行って図鑑を更新する
+        const dictChapSelect = document.getElementById('dict-chapter-select');
+        if (dictChapSelect) {
+            dictChapSelect.addEventListener('change', async (e) => {
+                const selectedChap = parseInt(e.target.value);
+                await window.GameStateManager.loadChapter(selectedChap);
+                // アクティブなサブタブに準拠して図鑑を再描画
+                const activeSubTab = document.querySelector('.sub-tab-btn.active');
+                const filter = activeSubTab ? activeSubTab.dataset.tab : 'all';
+                this.renderDictionary(filter);
+                this.updateHeaderStats();
+            });
+        }
 
         const footerTabs = document.querySelectorAll('.footer-tab');
         footerTabs.forEach(tab => {
@@ -42,6 +62,9 @@ window.GameUI = {
         if (target) {
             target.style.display = 'flex';
             if (screenId === 'tab-dictionary') {
+                const selectEl = document.getElementById('dict-chapter-select');
+                const currentChap = selectEl ? parseInt(selectEl.value) : 1;
+                // 現在選択されているチャプターに基づき描画
                 this.renderDictionary('all');
             }
         }
@@ -182,9 +205,6 @@ window.GameUI = {
             return;
         }
 
-        save.ep -= 15;
-        this.updateHeaderStats();
-
         const db = window.GameStateManager.wordDatabase;
         const unmastered = db.filter(w => save.words[w.id].status !== 'mastered');
         
@@ -193,9 +213,12 @@ window.GameUI = {
         resultBox.style.display = 'block';
 
         if (unmastered.length === 0) {
-            resultBox.innerHTML = `<h4>召喚結果</h4><p style="margin-top:5px; color:#27ae60;">おめでとうございます！すべての英単語キャラクターをすでにマスターしています！</p>`;
+            resultBox.innerHTML = `<h4>召喚結果</h4><p style="margin-top:5px; color:#27ae60;">おめでとうございます！現在のチャプターに未マスターの英単語キャラは存在しません！</p>`;
             return;
         }
+
+        save.ep -= 15;
+        this.updateHeaderStats();
 
         const prize = unmastered[Math.floor(Math.random() * unmastered.length)];
         const wordState = save.words[prize.id];
