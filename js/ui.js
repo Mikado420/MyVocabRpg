@@ -3,7 +3,7 @@ window.GameUI = {
         const dungeonBtns = document.querySelectorAll('.start-dungeon-btn');
         dungeonBtns.forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                const chap = parseInt(e.currentTarget.dataset.chap);
+                const chap = e.currentTarget.dataset.chap; // 文字列キー（"1-1" / "1-2"）にバインド
                 await window.GameController.startDungeon(chap);
             });
         });
@@ -14,11 +14,12 @@ window.GameUI = {
         const btnReset = document.getElementById('btn-reset-data');
         if (btnReset) btnReset.addEventListener('click', () => this.resetGameData());
 
+        // 修正箇所：図鑑画面のチャプター選択時に動的JSON（"1-1", "1-2"）を動的スイッチング
         const dictChapSelect = document.getElementById('dict-chapter-select');
         if (dictChapSelect) {
             dictChapSelect.addEventListener('change', async (e) => {
-                const selectedChap = parseInt(e.target.value);
-                await window.GameStateManager.loadChapter(selectedChap);
+                const selectedChapKey = e.target.value; // 文字列キー（"1-1" / "1-2"）を取得
+                await window.GameStateManager.loadChapter(selectedChapKey);
                 const activeSubTab = document.querySelector('.sub-tab-btn.active');
                 const filter = activeSubTab ? activeSubTab.dataset.tab : 'all';
                 this.renderDictionary(filter);
@@ -106,10 +107,19 @@ window.GameUI = {
             if (filterType === 'favorite' && !progress.is_favorite) return;
 
             const card = document.createElement('div');
-            card.className = `dict-card state-${progress.status} attr-${word.attr}`;
+            card.className = `dict-card state-${progress.status}`;
             
             const isClickableVoice = progress.status !== 'none';
             const voiceIcon = isClickableVoice ? '🔊' : '🔒';
+
+            let relatedSnippet = "";
+            if (progress.status === 'mastered' && word.has_related) {
+                relatedSnippet = `
+                    <div style="font-size:9px; color:#f1c40f; margin-top:3px;">
+                        <strong>追撃問題:</strong> ${word.related_question}
+                    </div>
+                `;
+            }
 
             card.innerHTML = `
                 <button class="fav-btn ${progress.is_favorite ? 'active' : ''}" data-id="${word.id}">★</button>
@@ -123,10 +133,7 @@ window.GameUI = {
                         <span>発音: <button class="speak-btn" ${isClickableVoice ? '' : 'disabled'}>${voiceIcon}</button></span>
                         <span style="font-size:9px; color:#f1c40f;">${word.part_of_speech}</span>
                     </div>
-                    <div class="card-phrase-info" style="margin-top:5px;">
-                        <strong>Phrase:</strong><br>${word.phrase_mask}<br>
-                        <strong>訳:</strong> ${word.phrase_meaning}
-                    </div>
+                    ${relatedSnippet}
                     <div class="card-etymology-info" style="margin-top:5px; color:#888;">
                         ${word.etymology}
                     </div>
@@ -163,7 +170,6 @@ window.GameUI = {
         }
     },
 
-    // 修正・機能追加箇所：バトル中の味方キャラクター編成表示、およびスキル発動可能時に明滅クラスを付与
     renderBattleParty() {
         const partyContainer = document.getElementById('battle-party');
         if (!partyContainer) return;
@@ -171,7 +177,7 @@ window.GameUI = {
 
         const db = window.GameStateManager.wordDatabase;
         const saveState = window.GameStateManager.saveData.words;
-        const skillTracker = window.GameController.skillCharge; // バトルマネージャー側のスキルチャージ情報を参照
+        const skillTracker = window.GameController.skillCharge; 
 
         let renderedCount = 0;
         db.forEach(word => {
@@ -179,20 +185,22 @@ window.GameUI = {
             if (progress && progress.status === 'mastered') {
                 const member = document.createElement('div');
                 
-                // チャージ数が溜まりきっている場合（0以下）に明滅アニメーションクラスを付与
-                const currentCharge = skillTracker[word.attr] || 0;
+                const charKey = word.id === "sistand_0001" ? "leon" : (word.id === "sistand_0002" ? "aqua" : "wood");
+                const currentCharge = skillTracker[charKey] || 0;
                 const isReady = currentCharge <= 0;
                 
-                member.className = `party-member char-${word.attr} ${isReady ? 'skill-ready' : ''}`;
+                member.className = `party-member ${isReady ? 'skill-ready' : ''}`;
+                member.style.backgroundColor = "#5a4b41"; 
+                member.style.color = "#fff";
+                
                 member.innerText = word.word.substring(0, 3).toUpperCase();
                 member.dataset.wordId = word.id;
-                member.dataset.attr = word.attr;
+                member.dataset.charKey = charKey;
 
-                // 明滅キャラタップでアクティブスキルを発動
                 member.addEventListener('click', (e) => {
-                    const attr = e.currentTarget.dataset.attr;
+                    const charKey = e.currentTarget.dataset.charKey;
                     const wordId = e.currentTarget.dataset.wordId;
-                    window.GameController.activateSkill(attr, wordId);
+                    window.GameController.activateSkill(charKey, wordId);
                 });
 
                 partyContainer.appendChild(member);
@@ -200,19 +208,20 @@ window.GameUI = {
             }
         });
 
-        // 誰も解放していない場合の仮のスキル妖精
         if (renderedCount === 0) {
-            const types = ['fire', 'water', 'wood'];
+            const types = ['leon', 'aqua', 'wood'];
             types.forEach(type => {
                 const member = document.createElement('div');
                 const isReady = (skillTracker[type] || 0) <= 0;
-                member.className = `party-member char-${type} ${isReady ? 'skill-ready' : ''}`;
-                member.innerText = type === 'fire' ? '火妖' : type === 'water' ? '水妖' : '木妖';
-                member.dataset.attr = type;
+                member.className = `party-member ${isReady ? 'skill-ready' : ''}`;
+                member.style.backgroundColor = "#5a4b41";
+                member.style.color = "#fff";
+                member.innerText = type === 'leon' ? 'レオン' : type === 'aqua' ? 'アクア' : 'ウッド';
+                member.dataset.charKey = type;
                 member.dataset.wordId = `fairy_${type}`;
                 
                 member.addEventListener('click', (e) => {
-                    window.GameController.activateSkill(e.currentTarget.dataset.attr, e.currentTarget.dataset.wordId);
+                    window.GameController.activateSkill(e.currentTarget.dataset.charKey, e.currentTarget.dataset.wordId);
                 });
                 partyContainer.appendChild(member);
             });
