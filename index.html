@@ -34,9 +34,10 @@
                     <p>シス単の章に沿ってバトルに挑みます</p>
                 </div>
                 <div class="stone-menu">
-                    <button class="stone-btn btn-fire start-dungeon-btn" data-chap="1">第1章：基礎の森 (Basic) に挑戦</button>
-                    <button class="stone-btn btn-fire start-dungeon-btn" data-chap="2">第2章：必修の荒野 (Essential) に挑戦</button>
-                    <button class="stone-btn btn-locked">第3章：実力の塔 (Advanced) [未解放]</button>
+                    <!-- 修正箇所：chapter1-1 と chapter1-2 への分割割り当て -->
+                    <button class="stone-btn btn-fire start-dungeon-btn" data-chap="1-1">第1章(前編)：基礎の森 (1〜10)</button>
+                    <button class="stone-btn btn-fire start-dungeon-btn" data-chap="1-2">第1章(後編)：基礎の森 (88〜97)</button>
+                    <button class="stone-btn btn-locked">第2章：必修の荒野 [未解放]</button>
                 </div>
             </div>
 
@@ -45,9 +46,10 @@
                 <div class="dict-control">
                     <div class="dict-title-row">
                         <h3>単語図鑑</h3>
+                        <!-- 修正箇所：chapter1-1 と chapter1-2 への分割切り替え -->
                         <select id="dict-chapter-select" class="pazd-select">
-                            <option value="1">第1章 (基礎)</option>
-                            <option value="2">第2章 (必修)</option>
+                            <option value="1-1">第1章 前半 (1-10)</option>
+                            <option value="1-2">第1章 後半 (88-97)</option>
                         </select>
                     </div>
                     <div class="dict-tab-box">
@@ -56,6 +58,7 @@
                         <button class="sub-tab-btn" data-tab="favorite">お気に入り</button>
                     </div>
                 </div>
+                <!-- 枠内独立スクロール領域 -->
                 <div id="dict-list" class="dict-grid"></div>
             </div>
 
@@ -77,7 +80,7 @@
                     <div class="stone-menu">
                         <button id="btn-reset-data" class="stone-btn btn-danger">セーブデータをリセット</button>
                         <div class="credits">
-                            <p>英単語クイズRPG v2.6</p>
+                            <p>英単語クイズRPG v2.8</p>
                             <p>GitHub共同開発用設計モデル</p>
                         </div>
                     </div>
@@ -85,7 +88,7 @@
             </div>
         </main>
 
-        <!-- エネミー・スキャン画面 (バトル突入オーバーレイ) -->
+        <!-- エネミー・スキャン画面 -->
         <div id="screen-scan" class="overlay-screen" style="display: none;">
             <div class="header-banner">⚠️ ENEMY DETECTED ⚠️</div>
             <p class="section-desc">このバトルの敵の弱点（出題される英単語）を検知しました。頭に叩き込んでください！</p>
@@ -93,7 +96,7 @@
             <button id="btn-start-battle" class="primary-btn-pazd">解析完了！バトル開始</button>
         </div>
 
-        <!-- バトル画面 (オーバーレイ) -->
+        <!-- バトル画面 -->
         <div id="screen-battle" class="overlay-screen" style="display: none;">
             <div id="flash-effect-panel" class="flash-overlay"></div>
             <div class="stage-header">
@@ -106,18 +109,16 @@
                 <div id="enemy-turn">3</div>
                 <div id="enemy-sprite">👿</div>
                 <div id="enemy-name">スライム</div>
-                <div class="hp-bar-container">
+                <div class="hp-bar-container enemy-hp-container">
                     <div id="enemy-hp" class="hp-bar enemy-hp-fill" style="width: 100%;"></div>
                 </div>
                 <div class="enemy-hp-text">HP: <span id="enemy-hp-text-num">100</span> / <span id="enemy-hp-max-num">100</span></div>
             </div>
 
-            <!-- プレイヤー・味方チームエリア (パズドラ風) -->
+            <!-- プレイヤー・味方チームエリア -->
             <div class="player-area">
-                <!-- スキル発動時のガイド -->
                 <div class="skill-guide-text">※スキル明滅時にキャラタップでスキル発動！</div>
                 <div class="party-list" id="battle-party"></div>
-                <!-- 修正箇所：黒背景の競合を廃止し、3D発光HPバーに統一 -->
                 <div class="hp-bar-container">
                     <div id="player-hp" class="hp-bar hp-green" style="width: 100%;"></div>
                 </div>
@@ -125,30 +126,23 @@
             </div>
 
             <!-- バトルログ -->
-            <div id="battle-log">攻撃したい属性のパネルを選択してください！</div>
-
-            <!-- パネル選択領域 -->
-            <div class="panel-box">
-                <button class="panel-btn panel-fire" data-attr="fire">火 (動詞)</button>
-                <button class="panel-btn panel-water" data-attr="water">水 (名詞)</button>
-                <button class="panel-btn panel-wood" data-attr="wood">木 (形容詞)</button>
+            <div id="battle-log" style="display: flex; align-items: center; justify-content: center; min-height: 80px;">
+                攻撃開始を検知しています...
             </div>
         </div>
 
         <!-- クイズ表示オーバーレイ -->
         <div id="quiz-overlay" style="display: none;">
-            <!-- 通常4択クイズ -->
             <div class="quiz-box" id="normal-quiz-box">
                 <div id="quiz-timer">⏱️ 7s</div>
-                <div id="quiz-genre">属性: FIRE</div>
+                <div id="quiz-genre">英単語クイズ</div>
                 <h3 id="quiz-word">abandon</h3>
                 <div id="quiz-choices" class="choices-container"></div>
             </div>
 
-            <!-- ミニマル・フレーズ追撃クイズ -->
             <div class="quiz-box chase-box" id="chase-quiz-box" style="display: none;">
                 <div class="chase-header">⚡ MULTI-CHAIN ATTACK! ⚡</div>
-                <p class="chase-desc">ミニマル・フレーズを完成させて追撃せよ！</p>
+                <p class="chase-desc">派生語・ミニマルフレーズ穴埋めで追撃せよ！</p>
                 <h4 id="chase-phrase">acquire a computer ( ____ )</h4>
                 <p id="chase-phrase-jp">（コンピュータの技術を身につける）</p>
                 <div id="chase-choices" class="choices-container"></div>
