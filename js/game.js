@@ -1,7 +1,6 @@
 window.GameController = {
     currentWave: 0,
-    maxWave: 3,
-    combo: 0,
+    maxWave: 10, // 10連戦仕様
 
     enemyHp: 100,
     enemyMaxHp: 100,
@@ -11,38 +10,39 @@ window.GameController = {
     playerHp: 100,
     playerMaxHp: 100,
 
+    // 今回の10単語セット格納ステート
+    currentSessionWords: [],
+    sessionQueue: [], // 出題順シャッフルキュー
+
     // ラスボス用：コンボ吸収シールド管理ステート
     comboShieldCount: 0, // 現在のコンボ吸収中の正解数
     requiredComboShield: 2, // 突破に必要な連続正解コンボ数
 
-    // 中ボス用：毒に汚染された選択肢の「正解テキスト」を裏で保持（見た目では判別不能）
+    // 中ボス用：毒に汚染された選択肢の「正解テキスト」を裏で保持
     poisonMeaningText: "",
 
-    // 各属性キャラクターのアクティブスキル用ターンチャージ（残り正解ターン数）
+    // 属性に依存しない各キャラクター個別のアクティブスキル用ターンチャージ
     skillCharge: {
-        fire: 3, // レオン：3問正解で発動可能
-        water: 4, // アクア：4問正解で発動可能
-        wood: 3  // ウッド：3問正解で発動可能
+        leon: 3,  // レオン：3問正解で発動可能（2択）
+        aqua: 4,  // アクア：4問正解で発動可能（遅延）
+        wood: 3   // ウッド：3問正解で発動可能（回復）
     },
-    // それぞれの初期必要チャージ値
-    skillChargeMax: { fire: 3, water: 4, wood: 3 },
+    skillChargeMax: { leon: 3, aqua: 4, wood: 3 },
 
-    // 各敵モンスターに属性（attr）を設定し、三すくみダメージをサポート
     enemyConfigs: [
-        { name: "レッドスライム (火)", emoji: "👿", hp: 50, turn: 3, attr: "fire" },
-        { name: "アクアナイト (水/中ボス)", emoji: "🛡️", hp: 80, turn: 2, attr: "water" },
-        { name: "古代木霊獣 (BOSS/木)", emoji: "🦁", hp: 150, turn: 3, attr: "wood" }
+        { name: "レッドスライム", emoji: "👿", hp: 50, turn: 3 },
+        { name: "アクアナイト (中ボス)", emoji: "🛡️", hp: 80, turn: 2 },
+        { name: "古代木霊獣 (BOSS)", emoji: "🦁", hp: 150, turn: 3 }
     ],
 
     currentQuizWord: null,
     quizTimer: null,
     quizTimeLeft: 7,
-    quizLimitMax: 7, // 通常制限時間 (火のリーダースキルで書き換え可能)
+    quizLimitMax: 7, // 通常制限時間 (リーダースキルで書き換え)
 
     isInputLocked: false,
 
     init() {
-        // 安全なイベントリスナーの登録（ガード節）
         const btnStartBattle = document.getElementById('btn-start-battle');
         if (btnStartBattle) {
             btnStartBattle.addEventListener('click', () => {
@@ -58,16 +58,31 @@ window.GameController = {
                 window.GameUI.showHome();
             });
         }
+    },
 
-        const panels = document.querySelectorAll('.panel-btn');
-        panels.forEach(panel => {
-            panel.addEventListener('click', (e) => {
-                if (this.isInputLocked) return;
-                const attr = e.currentTarget.dataset.attr;
-                this.comboShieldCount = 0; // シールドカウンターをリセットしてクイズ開始
-                this.triggerQuiz(attr, false);
+    // サイクルにのっとり、未学習の単語から重複なくランダムで最大10語を抽選するアルゴリズム
+    selectTenWords() {
+        const db = window.GameStateManager.wordDatabase;
+        const saveWords = window.GameStateManager.saveData.words;
+
+        // 今回の学習サイクルで未学習（learned_in_cycle が false）のものを抽出
+        let unlearned = db.filter(w => !saveWords[w.id].learned_in_cycle);
+
+        // すべての単語を一巡（学習し終えた）した場合はフラグをリセットしてループ
+        if (unlearned.length === 0) {
+            db.forEach(w => {
+                if (saveWords[w.id]) {
+                    saveWords[w.id].learned_in_cycle = false;
+                }
             });
-        });
+            window.GameStateManager.save();
+            unlearned = [...db];
+            console.log("英単語帳の全単語を一巡したため、学習サイクルを自動リセットしました。");
+        }
+
+        // 未学習の中から10語を完全ランダム抽選
+        const shuffled = [...unlearned].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, Math.min(10, shuffled.length));
     },
 
     async startDungeon(chapterNum) {
@@ -75,23 +90,29 @@ window.GameController = {
         
         await window.GameStateManager.loadChapter(chapterNum);
         
+        // 1. 今回のセッション用10単語を選出
+        this.currentSessionWords = this.selectTenWords();
+        
+        // 2. 10単語からWAVE出題用シャッフルキューを作成
+        this.sessionQueue = [...this.currentSessionWords].sort(() => Math.random() - 0.5);
+        
+        // WAVE最大数を、選出された単語数（基本10、全単語数が10未満ならその数）にバインド
+        this.maxWave = this.currentSessionWords.length;
         this.currentWave = 0;
         this.playerHp = this.playerMaxHp;
         this.comboShieldCount = 0;
         this.poisonMeaningText = "";
 
         // スキルチャージの初期リセット
-        this.skillCharge.fire = this.skillChargeMax.fire;
-        this.skillCharge.water = this.skillChargeMax.water;
+        this.skillCharge.leon = this.skillChargeMax.leon;
+        this.skillCharge.aqua = this.skillChargeMax.aqua;
         this.skillCharge.wood = this.skillChargeMax.wood;
 
         // リーダースキル（常時発動）の判定
         const hasFireMaster = Object.keys(window.GameStateManager.saveData.words).some(
-            id => id.includes("sistand") && 
-                  window.GameStateManager.saveData.words[id].status === "mastered" && 
-                  window.GameStateManager.wordDatabase.find(x => x.id === id)?.attr === "fire"
+            id => id.includes("sistand") && window.GameStateManager.saveData.words[id].status === "mastered"
         );
-        // リーダースキル発動 ➔ 制限時間を10秒に延長（火マスター所持時）
+        // リーダースキル発動 ➔ 制限時間を10秒に延長
         if (hasFireMaster || true) {
             this.quizLimitMax = 10;
         } else {
@@ -102,17 +123,15 @@ window.GameController = {
         this.showScanPhase();
     },
 
+    // 抽選された10単語すべてを一括表示してインプットさせる
     showScanPhase() {
         this.isInputLocked = true;
         const scanList = document.getElementById('scan-list');
         if (!scanList) return;
         scanList.innerHTML = '';
 
-        const db = window.GameStateManager.wordDatabase;
-        const startIdx = this.currentWave * 2;
-        const waveWords = db.slice(startIdx, Math.min(startIdx + 3, db.length));
-
-        waveWords.forEach(word => {
+        // 抽選された10単語すべてを描画
+        this.currentSessionWords.forEach(word => {
             window.GameStateManager.encounterWord(word.id);
 
             const card = document.createElement('div');
@@ -138,13 +157,34 @@ window.GameController = {
         window.GameUI.showScreen('screen-scan');
     },
 
+    // 10連戦に合わせ、中ボスや大ボスのHPバランス・AIを最適化
     startBattlePhase() {
         this.isInputLocked = false; 
-        const config = this.enemyConfigs[this.currentWave];
-        this.enemyHp = config.hp;
-        this.enemyMaxHp = config.hp;
-        this.enemyTurn = config.turn;
-        this.enemyMaxTurn = config.turn;
+        
+        const isBossWave = (this.currentWave === this.maxWave - 1);
+        const isMidBossWave = (this.currentWave === Math.floor(this.maxWave / 2));
+        
+        let enemyName = `スライム (WAVE ${this.currentWave + 1})`;
+        let enemyEmoji = "👿";
+        let enemyHp = 30 + this.currentWave * 6; // 進むにつれてHPが徐々に微インフレ
+        let enemyTurn = 3;
+        
+        if (isBossWave) {
+            enemyName = "古代木霊獣 (BOSS)";
+            enemyEmoji = "🦁";
+            enemyHp = 150;
+            enemyTurn = 3;
+        } else if (isMidBossWave) {
+            enemyName = "アクアナイト (中ボス)";
+            enemyEmoji = "🛡️";
+            enemyHp = 70;
+            enemyTurn = 2;
+        }
+
+        this.enemyHp = enemyHp;
+        this.enemyMaxHp = enemyHp;
+        this.enemyTurn = enemyTurn;
+        this.enemyMaxTurn = enemyTurn;
 
         const stageNameEl = document.getElementById('stage-name');
         if (stageNameEl) {
@@ -152,10 +192,10 @@ window.GameController = {
         }
 
         const enemyNameEl = document.getElementById('enemy-name');
-        if (enemyNameEl) enemyNameEl.innerText = config.name;
+        if (enemyNameEl) enemyNameEl.innerText = enemyName;
 
         const enemySpriteEl = document.getElementById('enemy-sprite');
-        if (enemySpriteEl) enemySpriteEl.innerText = config.emoji;
+        if (enemySpriteEl) enemySpriteEl.innerText = enemyEmoji;
         
         this.updateEnemyHp();
         this.updateEnemyTurn();
@@ -165,42 +205,43 @@ window.GameController = {
         window.GameUI.renderBattleParty();
         window.GameUI.showScreen('screen-battle');
 
-        // BOSS戦（WAVE 3）開始時の特殊シールドスキル警告
-        if (this.currentWave === 2) {
-            const logEl = document.getElementById('battle-log');
-            if (logEl) {
-                logEl.innerHTML = `⚠️ <strong>BOSS常時スキル発動：『2コンボ吸収シールド』</strong><br>クイズに【2連続で正解】しなければ、ダメージはすべて無効化（吸収）される！`;
-            }
+        // 特殊スキルAIの常時警告メッセージ更新
+        const logEl = document.getElementById('battle-log');
+        if (isBossWave && logEl) {
+            logEl.innerHTML = `⚠️ <strong>BOSS常時スキル発動：『2コンボ吸収シールド』</strong><br>クイズに【2連続で正解】しなければ、ダメージはすべて無効化（吸収）される！`;
+        } else if (isMidBossWave && logEl) {
+            logEl.innerHTML = `⚠️ <strong>中ボス常時スキル発動：『毒トラップの混入』</strong><br>曖昧な記憶を突く毒パネルが選択肢にステルスで紛れ込んでいる！`;
+        } else if (logEl) {
+            logEl.innerText = "攻撃開始を検知しています...";
         }
+
+        // オートクイズバトル開始
+        setTimeout(() => {
+            this.triggerQuiz(false);
+        }, 800);
     },
 
-    // 属性相性（ダメージ倍率）算出
-    getDamageMultiplier(attackerAttr, defenderAttr) {
-        if (attackerAttr === 'fire' && defenderAttr === 'wood') return 2.0; 
-        if (attackerAttr === 'fire' && defenderAttr === 'water') return 0.5; 
-        
-        if (attackerAttr === 'water' && defenderAttr === 'fire') return 2.0; 
-        if (attackerAttr === 'water' && defenderAttr === 'wood') return 0.5; 
-        
-        if (attackerAttr === 'wood' && defenderAttr === 'water') return 2.0; 
-        if (attackerAttr === 'wood' && defenderAttr === 'fire') return 0.5; 
-        
+    getDamageMultiplier() {
         return 1.0; 
     },
 
-    triggerQuiz(attr, isShieldChain = false) {
+    // 抽選された10単語から、WAVEごとに重複なく1単語ずつ出題する
+    triggerQuiz(isShieldChain = false) {
         if (this.isInputLocked && !isShieldChain) return;
         this.isInputLocked = true; 
 
-        const db = window.GameStateManager.wordDatabase;
-        const filtered = db.filter(x => x.attr === attr);
-        if (filtered.length === 0) {
-            this.isInputLocked = false;
-            return;
+        if (isShieldChain) {
+            // シールド連戦中の場合は現在の単語を維持
+        } else {
+            // 通常ターン開始時：シャッフル出題キューから次の単語を安全に取り出し
+            if (this.sessionQueue.length > 0) {
+                this.currentQuizWord = this.sessionQueue.pop();
+            } else {
+                this.currentQuizWord = this.currentSessionWords[Math.floor(Math.random() * this.currentSessionWords.length)];
+            }
         }
 
-        const wordObj = filtered[Math.floor(Math.random() * filtered.length)];
-        this.currentQuizWord = wordObj;
+        const wordObj = this.currentQuizWord;
 
         const normalBox = document.getElementById('normal-quiz-box');
         if (normalBox) normalBox.style.display = 'block';
@@ -208,26 +249,25 @@ window.GameController = {
         const chaseBox = document.getElementById('chase-quiz-box');
         if (chaseBox) chaseBox.style.display = 'none';
 
-        // コンボ吸収中の場合はヘッダーに進捗を表示
         const quizGenreEl = document.getElementById('quiz-genre');
         if (quizGenreEl) {
-            if (this.currentWave === 2) {
-                quizGenreEl.innerText = `【シールド突破まで あと ${this.requiredComboShield - this.comboShieldCount} 問】属性: ${attr.toUpperCase()}`;
+            if (this.currentWave === this.maxWave - 1) {
+                quizGenreEl.innerText = `【シールド突破まで あと ${this.requiredComboShield - this.comboShieldCount} 問】`;
             } else {
-                quizGenreEl.innerText = `属性: ${attr.toUpperCase()} (${wordObj.part_of_speech})`;
+                quizGenreEl.innerText = `ジャンル: ${wordObj.part_of_speech}`;
             }
         }
 
         const quizWordEl = document.getElementById('quiz-word');
         if (quizWordEl) quizWordEl.innerText = wordObj.word;
 
-        // 4択選択肢：正解(1) ＋ 誤答(2) ＋ 毒(1)
         const choices = [wordObj.meaning, ...wordObj.distractors].sort(() => Math.random() - 0.5);
         
-        // 修正仕様：中ボス（WAVE 2）による『ステルス型毒トラップ選択肢の混入』
+        // ステルス型毒トラップ（WAVE5 中ボスのみ）
         this.poisonMeaningText = "";
-        if (this.currentWave === 1 && Math.random() < 0.6) { // 60%の確率で混入
-            this.poisonMeaningText = wordObj.poison_distractor; // json上で設計されたスペル酷似ひっかけ単語
+        const isMidBossWave = (this.currentWave === Math.floor(this.maxWave / 2));
+        if (isMidBossWave && Math.random() < 0.6) {
+            this.poisonMeaningText = wordObj.poison_distractor; 
         }
 
         const choicesBox = document.getElementById('quiz-choices');
@@ -237,9 +277,8 @@ window.GameController = {
         choices.forEach((choice) => {
             const btn = document.createElement('button');
             btn.className = 'choice-btn';
-            btn.innerText = choice; // 💀などの視覚マーカーは一切入れず、通常の表示にする
+            btn.innerText = choice; 
             
-            // タップ時に、裏で保持している「毒テキスト」と一致するかどうかを自動判定
             const isPoisonChoice = (this.poisonMeaningText !== "" && choice === this.poisonMeaningText);
             btn.addEventListener('click', () => this.handleNormalAnswer(choice, isPoisonChoice));
             
@@ -261,7 +300,7 @@ window.GameController = {
             if (timerEl) timerEl.innerText = `⏱️ ${this.quizTimeLeft}s`;
             if (this.quizTimeLeft <= 0) {
                 clearInterval(this.quizTimer);
-                this.handleNormalAnswer("", false); // 時間切れ
+                this.handleNormalAnswer("", false); 
             }
         }, 1000);
     },
@@ -269,14 +308,12 @@ window.GameController = {
     handleNormalAnswer(selected, isPoison = false) {
         clearInterval(this.quizTimer);
 
-        // 1. ステルス毒トラップ（スペル・連想酷似ひっかけ）を踏んだ場合の判定
         if (isPoison) {
             this.combo = 0;
             this.updateCombo();
             const overlay = document.getElementById('quiz-overlay');
             if (overlay) overlay.style.display = 'none';
 
-            // 毒による自傷ダメージ (最大HPの25%)
             const poisonDmg = 25;
             this.playerHp -= poisonDmg;
             if (this.playerHp < 0) this.playerHp = 0;
@@ -284,7 +321,7 @@ window.GameController = {
 
             const logEl = document.getElementById('battle-log');
             if (logEl) {
-                logEl.innerHTML = `💀 <strong>毒トラップ発動！</strong><br>スペル・概念が酷似した『うろ覚えひっかけパネル』を踏んでしまい、25 の大ダメージ！<br>(正解: 「${this.currentQuizWord.meaning}」)`;
+                logEl.innerHTML = `💀 <strong>毒トラップ発動！</strong><br>スペルや概念が類似した『うろ覚えひっかけパネル』を踏んでしまい、25 のダメージ！<br>(正解: 「${this.currentQuizWord.meaning}」)`;
             }
             this.endTurnProcess();
             return;
@@ -298,43 +335,46 @@ window.GameController = {
             this.combo++;
             this.updateCombo();
             
-            // 正解時、対応する属性メンバーのスキルゲージをチャージ
-            const attr = this.currentQuizWord.attr;
-            if (this.skillCharge[attr] > 0) {
-                this.skillCharge[attr]--;
-                if (this.skillCharge[attr] === 0) {
-                    window.GameUI.renderBattleParty();
+            const chars = ['leon', 'aqua', 'wood'];
+            chars.forEach(char => {
+                if (this.skillCharge[char] > 0) {
+                    this.skillCharge[char]--;
                 }
-            }
+            });
+            window.GameUI.renderBattleParty(); 
 
-            // 2. 2コンボ吸収シールドの判定処理（ラスボススキル）
-            if (this.currentWave === 2) {
+            // BOSS戦：2コンボ吸収シールドの判定
+            const isBossWave = (this.currentWave === this.maxWave - 1);
+            if (isBossWave) {
                 this.comboShieldCount++;
                 if (this.comboShieldCount < this.requiredComboShield) {
-                    // 1問目正解：オーバーレイを閉じず、シームレスに2問目の単語を切り替えて出題
-                    if (logEl) logEl.innerHTML = `🔥 <strong>1コンボ達成！</strong><br>シールド破壊まであと1問！連続で正解せよ！`;
+                    if (logEl) logEl.innerHTML = `🔥 <strong>1コンボ達成！</strong><br>シールド突破まであと1問！連続で正解せよ！`;
                     
                     setTimeout(() => {
-                        this.triggerQuiz(this.currentQuizWord.attr, true); // シールド連戦フラグ
+                        this.triggerQuiz(true); 
                     }, 800);
                     return;
                 }
             }
 
-            // 通常、または2コンボシールド完全突破時はミニマルフレーズ追撃へ
+            // 派生語・フレーズ連動追撃へ
             setTimeout(() => {
-                this.triggerChaseQuiz();
+                if (this.currentQuizWord.has_related) {
+                    this.triggerChaseQuiz(); 
+                } else {
+                    if (logEl) logEl.innerText = "正解！味方キャラクターの一斉攻撃！";
+                    this.executeDamagePhase(false); 
+                }
             }, 600);
 
         } else {
-            // 不正解時の処理
             this.combo = 0;
             this.updateCombo();
             const overlay = document.getElementById('quiz-overlay');
             if (overlay) overlay.style.display = 'none';
 
-            // ラスボス戦でミスした場合はシールド吸収
-            if (this.currentWave === 2) {
+            const isBossWave = (this.currentWave === this.maxWave - 1);
+            if (isBossWave) {
                 this.comboShieldCount = 0;
                 if (logEl) logEl.innerHTML = `❌ <strong>コンボ吸収失敗！</strong><br>シールドにダメージを完全に無効化（吸収）された！<br>(正解: 「${this.currentQuizWord.meaning}」)`;
             } else {
@@ -378,37 +418,30 @@ window.GameController = {
         if (overlay) overlay.style.display = 'none';
 
         const isCorrect = (selected === this.currentQuizWord.phrase_correct);
+        this.executeDamagePhase(isCorrect); 
+    },
 
-        let baseDmg = 30;
+    executeDamagePhase(isCritical) {
+        let baseDmg = 35; 
         let comboMult = 1 + (this.combo - 1) * 0.1;
         let finalDmg = Math.floor(baseDmg * comboMult);
 
         const logEl = document.getElementById('battle-log');
 
-        // 属性相性（三すくみ補正）の計算
-        const defenderConfig = this.enemyConfigs[this.currentWave];
-        const multiplier = this.getDamageMultiplier(this.currentQuizWord.attr, defenderConfig.attr);
-        finalDmg = Math.floor(finalDmg * multiplier);
-
-        let multiplierText = "";
-        if (multiplier === 2.0) multiplierText = " (効果は抜群だ！🔥)";
-        if (multiplier === 0.5) multiplierText = " (効果はいまひとつのようだ…💧)";
-
-        if (isCorrect) {
-            finalDmg = Math.floor(finalDmg * 2.0); // クリティカル補正
-            if (logEl) logEl.innerText = `⚡クリティカル追撃成功！⚡ ${finalDmg} ダメージ！${multiplierText}`;
-            this.playAttackEffect(this.currentQuizWord.attr, true);
+        if (isCritical) {
+            finalDmg = Math.floor(finalDmg * 2.0); 
+            if (logEl) logEl.innerText = `⚡クリティカル追撃成功！⚡ ${finalDmg} ダメージ！`;
+            this.playAttackEffect(true);
         } else {
-            if (logEl) logEl.innerText = `通常攻撃成功！敵に ${finalDmg} ダメージ！${multiplierText}`;
-            this.playAttackEffect(this.currentQuizWord.attr, false);
+            if (logEl) logEl.innerText = `通常攻撃成功！敵に ${finalDmg} ダメージ！`;
+            this.playAttackEffect(false);
         }
 
         this.enemyHp -= finalDmg;
         if (this.enemyHp < 0) this.enemyHp = 0;
         this.updateEnemyHp();
 
-        // 突破完了したため、シールド正解数をリセット
-        this.comboShieldCount = 0;
+        this.comboShieldCount = 0; 
 
         setTimeout(() => {
             if (this.enemyHp <= 0) {
@@ -419,13 +452,13 @@ window.GameController = {
         }, 1100);
     },
 
-    activateSkill(attr, wordId) {
-        if (this.isInputLocked || this.skillCharge[attr] > 0) return;
+    activateSkill(charKey, wordId) {
+        if (this.isInputLocked || this.skillCharge[charKey] > 0) return;
 
         this.isInputLocked = true; 
         const logEl = document.getElementById('battle-log');
 
-        this.skillCharge[attr] = this.skillChargeMax[attr];
+        this.skillCharge[charKey] = this.skillChargeMax[charKey];
         window.GameUI.renderBattleParty(); 
 
         const flashPanel = document.getElementById('flash-effect-panel');
@@ -434,40 +467,42 @@ window.GameController = {
             setTimeout(() => flashPanel.classList.remove('flash-white'), 300);
         }
 
-        if (attr === 'fire') {
-            if (logEl) logEl.innerHTML = `🔥 <strong>レオンのスキル：『2択スキャン』発動！</strong><br>次の火属性パネルの難易度が大幅に下がった！`;
+        if (charKey === 'leon') {
+            if (logEl) logEl.innerHTML = `🔥 <strong>レオンのスキル：『2択スキャン』発動！</strong><br>ハズレ選択肢が自動で削減され、瞬時にクイズが出題される！`;
             setTimeout(() => {
                 this.isInputLocked = false;
                 this.comboShieldCount = 0; 
-                this.triggerQuiz('fire', false); 
+                this.triggerQuiz(false); 
             }, 1000);
 
-        } else if (attr === 'water') {
+        } else if (charKey === 'aqua') {
             this.enemyTurn += 2;
             this.updateEnemyTurn();
             if (logEl) logEl.innerHTML = `💧 <strong>アクアのスキル：『遅延シールド』発動！</strong><br>敵の反撃ターンが 2ターン 延長された！`;
             setTimeout(() => {
                 this.isInputLocked = false;
+                this.triggerQuiz(false); 
             }, 1200);
 
-        } else if (attr === 'wood') {
+        } else if (charKey === 'wood') {
             this.playerHp += 50;
             if (this.playerHp > this.playerMaxHp) this.playerHp = this.playerMaxHp;
             this.updatePlayerHpBar();
             if (logEl) logEl.innerHTML = `🌲 <strong>ウッドのスキル：『大回復の恵み』発動！</strong><br>プレイヤーのHPが 50 回復した！`;
             setTimeout(() => {
                 this.isInputLocked = false;
+                this.triggerQuiz(false); 
             }, 1200);
         }
     },
 
-    playAttackEffect(attr, isCritical) {
+    playAttackEffect(isCritical) {
         const enemyArea = document.querySelector('.enemy-area');
         const flashPanel = document.getElementById('flash-effect-panel');
         if (!enemyArea) return;
 
         const particle = document.createElement('div');
-        particle.className = `attack-particle particle-${attr} shoot-up`;
+        particle.className = `attack-particle particle-water shoot-up`; 
         enemyArea.appendChild(particle);
 
         if (isCritical && flashPanel) {
@@ -509,18 +544,34 @@ window.GameController = {
         }
         this.updateEnemyTurn();
         this.isInputLocked = false; 
+
+        // 敵の反撃ターン終了後、即座に自動的に次のクイズを出題
+        setTimeout(() => {
+            this.triggerQuiz(false);
+        }, 1000);
     },
 
+    // WAVEクリア（10WAVE連戦、WAVEごとにスキャンを挟まないスムーズな進行）
     handleWaveClear() {
         if (this.currentWave < this.maxWave - 1) {
             this.currentWave++;
             const logEl = document.getElementById('battle-log');
-            if (logEl) logEl.innerText = "敵を討伐！次のエネミーの弱点を解析します。";
+            if (logEl) logEl.innerText = "敵を討伐！次のエネミーが出現します！";
             
+            // スキャンは挟まず、1.2秒後に直接次のエネミーを召喚してバトル再開！
             setTimeout(() => {
-                this.showScanPhase();
+                this.startBattlePhase();
             }, 1200);
         } else {
+            // クリア時：今回学習した10単語に「学習サイクル済み」のフラグを刻んで保存
+            const saveWords = window.GameStateManager.saveData.words;
+            this.currentSessionWords.forEach(word => {
+                if (saveWords[word.id]) {
+                    saveWords[word.id].learned_in_cycle = true;
+                }
+            });
+            window.GameStateManager.save();
+
             window.GameUI.showScreen('screen-result');
         }
     },
